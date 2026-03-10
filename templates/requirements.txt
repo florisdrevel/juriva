@@ -1,6 +1,0 @@
-flask
-flask-cors
-groq
-pypdf
-python-dotenv
-gunicorn
