@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session
 from groq import Groq
 import pypdf
 import zipfile
@@ -7,7 +7,20 @@ import io
 import os
 
 app = Flask(__name__)
-client = Groq(api_key=os.environ.get("GROQ_API_KEY") or "REDACTED-GROQ-KEY")
+app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-ADMIN-SECRET"
+
+client = Groq(api_key=os.environ.get("GROQ_API_KEY") or "your-groq-key-here")
+
+# ─────────────────────────────────────────
+# ACCESS CODES — add or remove codes here
+# ─────────────────────────────────────────
+VALID_CODES = {
+    "JURIVA-PILOT-1",
+    "JURIVA-PILOT-2",
+    "JURIVA-PILOT-3",
+    "JURIVA-PILOT-4",
+    "JURIVA-PILOT-5",
+}
 
 def extract_text(file):
     filename = file.filename.lower()
@@ -28,8 +41,24 @@ def extract_text(file):
 def home():
     return render_template('index.html')
 
+@app.route('/api/verify-code', methods=['POST'])
+def verify_code():
+    data = request.get_json()
+    code = data.get('code', '').strip().upper()
+    if code in VALID_CODES:
+        session['authenticated'] = True
+        session['code'] = code
+        return jsonify({'success': True})
+    return jsonify({'success': False, 'error': 'Ongeldige toegangscode'})
+
+@app.route('/api/check-auth', methods=['GET'])
+def check_auth():
+    return jsonify({'authenticated': session.get('authenticated', False)})
+
 @app.route('/api/review', methods=['POST'])
 def review_contract():
+    if not session.get('authenticated'):
+        return jsonify({'error': 'Geen toegang. Voer uw toegangscode in.'}), 401
     try:
         if 'contract' not in request.files:
             return jsonify({'error': 'No file uploaded'}), 400
@@ -68,5 +97,4 @@ You do not hallucinate. If you are unsure, you say so."""
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-
     app.run(debug=True, port=5000)
