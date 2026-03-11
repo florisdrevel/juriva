@@ -15,6 +15,11 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY") or "your-groq-key-here")
 # ACCESS CODES — paste your valid_codes.txt block here
 # ─────────────────────────────────────────
 VALID_CODES = {
+   "JURIVA-PILOT-1",
+    "JURIVA-PILOT-2",
+    "JURIVA-PILOT-3",
+    "JURIVA-PILOT-4",
+    "JURIVA-PILOT-5",
    "JURIVA-DENTONS-001",  # amsterdam@dentons.com
     "JURIVA-HOUTHOFF-002",  # info@houthoff.com
     "JURIVA-LOYENSLOEFF-003",  # tom.van.helmond@loyensloeff.com
@@ -337,3 +342,4 @@ You do not hallucinate. If you are unsure, you say so."""
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
