@@ -85,7 +85,7 @@
             color: var(--bg);
         }
 
-        /* ── GATE SCREEN ── */
+        /* ── GATE ── */
         #gate {
             display: none;
             position: fixed;
@@ -166,6 +166,7 @@
             color: var(--red);
             align-self: flex-start;
             display: none;
+            line-height: 1.6;
         }
         .gate-contact {
             font-size: 12px;
@@ -173,10 +174,7 @@
             text-align: center;
             line-height: 1.8;
         }
-        .gate-contact a {
-            color: var(--accent);
-            text-decoration: none;
-        }
+        .gate-contact a { color: var(--accent); text-decoration: none; }
 
         /* ── MAIN APP ── */
         .main { width: 100%; max-width: 1000px; }
@@ -375,7 +373,7 @@
 </head>
 <body>
 
-    <!-- GATE SCREEN -->
+    <!-- GATE -->
     <div id="gate" class="visible">
         <div class="gate-box">
             <div class="gate-logo">Juriva</div>
@@ -385,8 +383,8 @@
                 <input class="gate-input" id="codeInput" type="text" placeholder="JURIVA-XXXX" autocomplete="off" spellcheck="false">
                 <button class="gate-btn" id="codeBtn" onclick="submitCode()">Toegang</button>
             </div>
-            <div class="gate-error" id="gateError">Ongeldige toegangscode. Probeer opnieuw.</div>
-            <div class="gate-contact">
+            <div class="gate-error" id="gateError"></div>
+            <div class="gate-contact" id="gateContact">
                 Geen toegangscode? Vraag een gratis pilot aan.<br>
                 <a href="mailto:info@juriva.nl">info@juriva.nl</a>
             </div>
@@ -394,7 +392,7 @@
     </div>
 
     <!-- MAIN APP -->
-    <div id="appWrapper" style="display:none; width:100%; display:none; flex-direction:column; align-items:center;">
+    <div id="appWrapper" style="display:none; width:100%; flex-direction:column; align-items:center;">
         <div class="topbar">
             <div class="topbar-left">
                 <div class="logo">Juriva</div>
@@ -486,7 +484,8 @@
                 gatePlaceholder: 'JURIVA-XXXX',
                 gateBtnText: 'Toegang',
                 gateContact: 'Geen toegangscode? Vraag een gratis pilot aan.',
-                gateError: 'Ongeldige toegangscode. Probeer opnieuw.',
+                gateErrorInvalid: 'Ongeldige toegangscode. Probeer opnieuw.',
+                gateErrorExpired: 'Uw toegang is verlopen. Neem contact op via info@juriva.nl voor een abonnement.',
                 uploadTitle: 'Sleep uw contract hierheen',
                 uploadHint: '.pdf &nbsp;·&nbsp; .docx &nbsp;·&nbsp; .txt',
                 fileChange: 'ander bestand kiezen',
@@ -499,6 +498,7 @@
                 labelActions: 'Acties',
                 subActions: 'aanbevolen',
                 errorPrefix: 'Fout: ',
+                trialWarning: (d) => `Nog ${d} dagen toegang — neem contact op via info@juriva.nl`,
                 prompt: `Je bent een expert juridisch contractreviewer.
 BELANGRIJK: Schrijf je volledige analyse in het Nederlands.
 KRITIEKE REGEL: Voor elk risico of elke clausule die je benoemt, MOET je eerst de exacte originele tekst uit het contract citeren tussen aanhalingstekens. Verzin nooit tekst. Citeer altijd eerst, analyseer dan.
@@ -537,7 +537,8 @@ Benoem clausules die normaal WEL aanwezig zijn maar in dit contract ONTBREKEN en
                 gatePlaceholder: 'JURIVA-XXXX',
                 gateBtnText: 'Enter',
                 gateContact: 'No access code? Request a free pilot.',
-                gateError: 'Invalid access code. Please try again.',
+                gateErrorInvalid: 'Invalid access code. Please try again.',
+                gateErrorExpired: 'Your access has expired. Contact us at info@juriva.nl to subscribe.',
                 uploadTitle: 'Drop your contract here',
                 uploadHint: '.pdf &nbsp;·&nbsp; .docx &nbsp;·&nbsp; .txt',
                 fileChange: 'choose a different file',
@@ -550,6 +551,7 @@ Benoem clausules die normaal WEL aanwezig zijn maar in dit contract ONTBREKEN en
                 labelActions: 'Actions',
                 subActions: 'recommended',
                 errorPrefix: 'Error: ',
+                trialWarning: (d) => `${d} days remaining — contact us at info@juriva.nl`,
                 prompt: `You are an expert legal contract reviewer.
 IMPORTANT: Respond entirely in English regardless of the contract language.
 CRITICAL RULE: For every risk or clause you identify, you MUST first quote the exact original text from the contract in quotation marks. Never paraphrase or invent text. Always quote first, then analyse.
@@ -588,20 +590,19 @@ Identify clauses that are normally present but MISSING from this contract and wh
             const res = await fetch('/api/check-auth');
             const data = await res.json();
             if (data.authenticated) {
-                showApp();
-            } else {
-                document.getElementById('gate').classList.add('visible');
+                showApp(data.days_remaining);
             }
         });
 
         async function submitCode() {
             const code = document.getElementById('codeInput').value.trim();
             const btn = document.getElementById('codeBtn');
-            const errorEl = document.getElementById('gateError');
+            const errEl = document.getElementById('gateError');
+            const t = translations[currentLang];
             if (!code) return;
             btn.disabled = true;
             btn.textContent = '...';
-            errorEl.style.display = 'none';
+            errEl.style.display = 'none';
             const res = await fetch('/api/verify-code', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -609,11 +610,11 @@ Identify clauses that are normally present but MISSING from this contract and wh
             });
             const data = await res.json();
             if (data.success) {
-                showApp();
+                showApp(data.days_remaining);
             } else {
-                errorEl.style.display = 'block';
+                errEl.textContent = data.error === 'expired' ? t.gateErrorExpired : t.gateErrorInvalid;
+                errEl.style.display = 'block';
                 btn.disabled = false;
-                const t = translations[currentLang];
                 btn.textContent = t.gateBtnText;
             }
         }
@@ -622,11 +623,16 @@ Identify clauses that are normally present but MISSING from this contract and wh
             if (e.key === 'Enter') submitCode();
         });
 
-        function showApp() {
+        function showApp(daysRemaining) {
             document.getElementById('gate').classList.remove('visible');
             document.getElementById('gate').style.display = 'none';
             const app = document.getElementById('appWrapper');
             app.style.display = 'flex';
+            if (daysRemaining !== undefined && daysRemaining <= 7) {
+                const tagline = document.getElementById('tagline');
+                tagline.textContent = translations[currentLang].trialWarning(daysRemaining);
+                tagline.style.color = 'rgba(224,85,85,0.8)';
+            }
         }
 
         function setLang(lang) {
@@ -637,7 +643,7 @@ Identify clauses that are normally present but MISSING from this contract and wh
             document.getElementById('gateLabel').textContent = t.gateLabel;
             document.getElementById('codeInput').placeholder = t.gatePlaceholder;
             document.getElementById('codeBtn').textContent = t.gateBtnText;
-            document.getElementById('gateError').textContent = t.gateError;
+            document.getElementById('gateContact').innerHTML = t.gateContact + '<br><a href="mailto:info@juriva.nl">info@juriva.nl</a>';
             document.getElementById('uploadTitle').textContent = t.uploadTitle;
             document.getElementById('uploadHint').innerHTML = t.uploadHint;
             document.getElementById('fileChange').textContent = t.fileChange;
@@ -757,18 +763,3 @@ Identify clauses that are normally present but MISSING from this contract and wh
     </script>
 </body>
 </html>
-```
-
----
-
-## WHAT CHANGED
-
-**Gate screen** — beautiful full-screen code entry before anyone sees the tool. Matches Juriva's dark aesthetic perfectly.
-
-**5 pilot codes ready to use** in `app.py` — give one to each pilot firm:
-```
-JURIVA-PILOT-1
-JURIVA-PILOT-2
-JURIVA-PILOT-3
-JURIVA-PILOT-4
-JURIVA-PILOT-5
