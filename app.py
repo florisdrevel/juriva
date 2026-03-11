@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-ADMIN-SECRET"
-client = Groq(api_key=os.environ.get("GROQ_API_KEY") or "your-groq-key-here")
+client = Groq(api_key=os.environ.get("GROQ_API_KEY") or "REDACTED-GROQ-KEY")
 
 # ─────────────────────────────────────────
 # ACCESS CODES — paste your valid_codes.txt block here
