@@ -32,256 +32,243 @@
             padding: 48px 24px 80px;
         }
         .topbar {
-            width: 100%;
-            max-width: 1000px;
-            display: flex;
-            align-items: center;
+            width: 100%; max-width: 1000px;
+            display: flex; align-items: center;
             justify-content: space-between;
             margin-bottom: 32px;
         }
-        .topbar-left {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
+        .topbar-left { display: flex; flex-direction: column; gap: 6px; }
         .logo {
             font-family: 'Instrument Serif', serif;
-            font-size: 44px;
-            color: var(--text);
-            letter-spacing: -0.02em;
-            line-height: 1;
+            font-size: 44px; color: var(--text);
+            letter-spacing: -0.02em; line-height: 1;
         }
         .tagline {
-            font-size: 15px;
-            color: rgba(240,237,232,0.65);
-            letter-spacing: 0.03em;
-            font-style: italic;
+            font-size: 15px; color: rgba(240,237,232,0.65);
+            letter-spacing: 0.03em; font-style: italic;
             font-family: 'Instrument Serif', serif;
         }
         .lang-toggle {
-            display: flex;
-            align-items: center;
-            gap: 2px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 100px;
-            padding: 4px;
+            display: flex; align-items: center; gap: 2px;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 100px; padding: 4px;
         }
         .lang-btn {
-            background: none;
-            border: none;
-            color: var(--muted);
-            font-family: 'DM Sans', sans-serif;
-            font-size: 12px;
-            font-weight: 500;
-            letter-spacing: 0.08em;
-            padding: 6px 14px;
-            border-radius: 100px;
-            cursor: pointer;
-            transition: all 0.2s;
+            background: none; border: none; color: var(--muted);
+            font-family: 'DM Sans', sans-serif; font-size: 12px;
+            font-weight: 500; letter-spacing: 0.08em;
+            padding: 6px 14px; border-radius: 100px;
+            cursor: pointer; transition: all 0.2s;
         }
-        .lang-btn.active {
-            background: var(--text);
-            color: var(--bg);
-        }
+        .lang-btn.active { background: var(--text); color: var(--bg); }
 
         /* ── GATE ── */
         #gate {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: var(--bg);
-            z-index: 100;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
+            display: none; position: fixed; inset: 0;
+            background: var(--bg); z-index: 100;
+            flex-direction: column; align-items: center;
+            justify-content: center; padding: 24px;
         }
         #gate.visible { display: flex; }
         .gate-box {
-            width: 100%;
-            max-width: 420px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 24px;
+            width: 100%; max-width: 420px;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 24px;
         }
         .gate-logo {
             font-family: 'Instrument Serif', serif;
-            font-size: 48px;
-            color: var(--text);
-            letter-spacing: -0.02em;
+            font-size: 48px; color: var(--text); letter-spacing: -0.02em;
         }
         .gate-tagline {
-            font-family: 'Instrument Serif', serif;
-            font-style: italic;
-            font-size: 15px;
-            color: rgba(240,237,232,0.55);
-            margin-top: -16px;
+            font-family: 'Instrument Serif', serif; font-style: italic;
+            font-size: 15px; color: rgba(240,237,232,0.55); margin-top: -16px;
         }
         .gate-label {
-            font-size: 12px;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--muted);
-            align-self: flex-start;
+            font-size: 12px; letter-spacing: 0.1em;
+            text-transform: uppercase; color: var(--muted); align-self: flex-start;
         }
-        .gate-input-row {
-            display: flex;
-            gap: 8px;
-            width: 100%;
-        }
+        .gate-input-row { display: flex; gap: 8px; width: 100%; }
         .gate-input {
-            flex: 1;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 14px 16px;
-            color: var(--text);
-            font-family: 'DM Sans', sans-serif;
-            font-size: 14px;
-            letter-spacing: 0.08em;
-            outline: none;
-            transition: border-color 0.2s;
+            flex: 1; background: var(--surface);
+            border: 1px solid var(--border); border-radius: 6px;
+            padding: 14px 16px; color: var(--text);
+            font-family: 'DM Sans', sans-serif; font-size: 14px;
+            letter-spacing: 0.08em; outline: none; transition: border-color 0.2s;
         }
         .gate-input:focus { border-color: var(--accent); }
         .gate-input::placeholder { color: var(--muted); letter-spacing: 0.04em; }
         .gate-btn {
-            background: var(--text);
-            color: var(--bg);
-            border: none;
-            border-radius: 6px;
-            padding: 14px 20px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: opacity 0.2s;
-            white-space: nowrap;
+            background: var(--text); color: var(--bg); border: none;
+            border-radius: 6px; padding: 14px 20px;
+            font-family: 'DM Sans', sans-serif; font-size: 14px;
+            font-weight: 500; cursor: pointer; transition: opacity 0.2s; white-space: nowrap;
         }
         .gate-btn:hover { opacity: 0.88; }
         .gate-btn:disabled { opacity: 0.3; cursor: not-allowed; }
         .gate-error {
-            font-size: 13px;
-            color: var(--red);
-            align-self: flex-start;
-            display: none;
-            line-height: 1.6;
+            font-size: 13px; color: var(--red);
+            align-self: flex-start; display: none; line-height: 1.6;
         }
         .gate-contact {
-            font-size: 12px;
-            color: var(--muted);
-            text-align: center;
-            line-height: 1.8;
+            font-size: 12px; color: var(--muted);
+            text-align: center; line-height: 1.8;
         }
         .gate-contact a { color: var(--accent); text-decoration: none; }
 
-        /* ── MAIN APP ── */
-        .main { width: 100%; max-width: 1000px; }
-        .upload-zone {
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            width: 100%;
-            height: 340px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            background: var(--surface);
-            transition: border-color 0.2s, background 0.2s;
-            position: relative;
+        /* ── TERMS MODAL ── */
+        #termsModal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.85); z-index: 200;
+            align-items: center; justify-content: center; padding: 24px;
+        }
+        #termsModal.visible { display: flex; }
+        .terms-box {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 8px; width: 100%; max-width: 640px;
+            max-height: 80vh; display: flex; flex-direction: column;
             overflow: hidden;
         }
+        .terms-header {
+            padding: 24px 28px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex; flex-direction: column; gap: 4px;
+        }
+        .terms-title {
+            font-family: 'Instrument Serif', serif;
+            font-size: 22px; color: var(--text);
+        }
+        .terms-subtitle { font-size: 12px; color: var(--muted); }
+        .terms-body {
+            padding: 20px 28px; overflow-y: auto;
+            font-size: 13px; line-height: 1.8;
+            color: rgba(240,237,232,0.7); flex: 1;
+        }
+        .terms-body h3 {
+            font-size: 11px; letter-spacing: 0.1em;
+            text-transform: uppercase; color: var(--accent);
+            margin: 20px 0 8px; font-weight: 500;
+        }
+        .terms-body p { margin-bottom: 10px; }
+        .terms-footer {
+            padding: 16px 28px; border-top: 1px solid var(--border);
+            display: flex; align-items: center; gap: 16px;
+        }
+        .terms-checkbox-row {
+            display: flex; align-items: center; gap: 10px; flex: 1;
+        }
+        .terms-checkbox {
+            width: 16px; height: 16px; cursor: pointer;
+            accent-color: var(--accent);
+        }
+        .terms-checkbox-label { font-size: 13px; color: var(--muted); }
+        .terms-accept-btn {
+            background: var(--text); color: var(--bg); border: none;
+            border-radius: 6px; padding: 12px 24px;
+            font-family: 'DM Sans', sans-serif; font-size: 13px;
+            font-weight: 500; cursor: pointer; transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+        .terms-accept-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+        .terms-accept-btn:hover:not(:disabled) { opacity: 0.88; }
+
+        /* ── PRIVACY BADGE ── */
+        .privacy-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 11px; color: var(--muted);
+            border: 1px solid var(--border); border-radius: 100px;
+            padding: 4px 12px; margin-bottom: 16px;
+        }
+        .privacy-dot {
+            width: 6px; height: 6px; background: var(--green);
+            border-radius: 50%; flex-shrink: 0;
+        }
+
+        /* ── MAIN APP ── */
+        .main { width: 100%; max-width: 1000px; }
+
+        /* Upload zones */
+        .upload-section { margin-bottom: 10px; }
+        .upload-label {
+            font-size: 10px; letter-spacing: 0.12em;
+            text-transform: uppercase; color: var(--muted);
+            margin-bottom: 6px; display: flex;
+            align-items: center; gap: 8px;
+        }
+        .upload-label .badge {
+            font-size: 9px; padding: 2px 8px;
+            border-radius: 100px; letter-spacing: 0.06em;
+        }
+        .badge-required { background: rgba(224,85,85,0.15); color: var(--red); }
+        .badge-optional { background: rgba(200,184,154,0.1); color: var(--accent); }
+
+        .upload-zone {
+            border: 1px solid var(--border); border-radius: 6px;
+            width: 100%; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            cursor: pointer; background: var(--surface);
+            transition: border-color 0.2s, background 0.2s;
+            position: relative; overflow: hidden;
+        }
+        .upload-zone.primary { height: 280px; }
+        .upload-zone.secondary { height: 100px; }
         .upload-zone:hover { border-color: rgba(200,184,154,0.25); background: #111; }
         .upload-zone.dragover { border-color: var(--accent); background: #111; }
         .upload-zone.has-file { border-color: rgba(200,184,154,0.3); }
         input[type="file"] { display: none; }
         .upload-default {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            pointer-events: none;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 10px; pointer-events: none;
         }
         .upload-icon { opacity: 0.25; }
         .upload-title {
             font-family: 'Instrument Serif', serif;
-            font-size: 22px;
-            color: var(--text);
+            font-size: 20px; color: var(--text);
         }
-        .upload-hint { font-size: 13px; color: var(--muted); }
+        .upload-title.small { font-size: 15px; }
+        .upload-hint { font-size: 12px; color: var(--muted); }
         .file-preview {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            gap: 16px;
-            pointer-events: none;
+            display: none; flex-direction: column;
+            align-items: center; gap: 10px; pointer-events: none;
         }
         .file-icon {
-            width: 56px;
-            height: 56px;
+            width: 44px; height: 44px;
             background: rgba(200,184,154,0.1);
             border: 1px solid rgba(200,184,154,0.2);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
+            border-radius: 8px; display: flex;
+            align-items: center; justify-content: center; font-size: 20px;
         }
-        .file-name { font-size: 16px; color: var(--text); font-weight: 400; }
+        .file-name { font-size: 14px; color: var(--text); font-weight: 400; }
         .file-change {
-            font-size: 12px;
-            color: var(--accent);
-            opacity: 0.7;
-            pointer-events: all;
-            cursor: pointer;
+            font-size: 11px; color: var(--accent);
+            opacity: 0.7; pointer-events: all; cursor: pointer;
         }
+
         .analyse-btn {
-            width: 100%;
-            margin-top: 10px;
-            padding: 18px 24px;
-            background: var(--text);
-            color: var(--bg);
-            border: none;
-            border-radius: 6px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 15px;
-            font-weight: 500;
-            letter-spacing: 0.04em;
-            cursor: pointer;
-            transition: opacity 0.2s, transform 0.1s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+            width: 100%; margin-top: 10px; padding: 18px 24px;
+            background: var(--text); color: var(--bg); border: none;
+            border-radius: 6px; font-family: 'DM Sans', sans-serif;
+            font-size: 15px; font-weight: 500; letter-spacing: 0.04em;
+            cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
         }
         .analyse-btn:hover:not(:disabled) { opacity: 0.88; }
         .analyse-btn:active:not(:disabled) { transform: scale(0.998); }
         .analyse-btn:disabled { opacity: 0.18; cursor: not-allowed; }
+
         #status {
-            display: none;
-            text-align: center;
-            padding: 48px 0;
-            width: 100%;
+            display: none; text-align: center;
+            padding: 48px 0; width: 100%;
         }
         .status-inner { display: flex; flex-direction: column; align-items: center; gap: 16px; }
         .pulse-ring {
-            width: 48px;
-            height: 48px;
-            border: 1px solid var(--accent);
-            border-radius: 50%;
-            animation: pulse-ring 1.5s ease infinite;
-            position: relative;
+            width: 48px; height: 48px;
+            border: 1px solid var(--accent); border-radius: 50%;
+            animation: pulse-ring 1.5s ease infinite; position: relative;
         }
         .pulse-ring::after {
-            content: '';
-            position: absolute;
-            inset: 8px;
-            background: var(--accent);
-            border-radius: 50%;
-            opacity: 0.4;
-            animation: pulse-dot 1.5s ease infinite;
+            content: ''; position: absolute; inset: 8px;
+            background: var(--accent); border-radius: 50%;
+            opacity: 0.4; animation: pulse-dot 1.5s ease infinite;
         }
         @keyframes pulse-ring {
             0%, 100% { transform: scale(1); opacity: 1; }
@@ -292,81 +279,54 @@
             50% { opacity: 0.8; }
         }
         .status-text { font-size: 15px; color: var(--muted); }
+
         #error {
-            display: none;
-            margin-top: 16px;
-            padding: 16px 20px;
-            border: 1px solid rgba(224,85,85,0.3);
-            border-radius: 6px;
-            font-size: 14px;
-            color: var(--red);
-            background: rgba(224,85,85,0.05);
-            width: 100%;
+            display: none; margin-top: 16px; padding: 16px 20px;
+            border: 1px solid rgba(224,85,85,0.3); border-radius: 6px;
+            font-size: 14px; color: var(--red);
+            background: rgba(224,85,85,0.05); width: 100%;
         }
         #results { display: none; margin-top: 32px; width: 100%; }
         .cards {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1px;
-            background: var(--border);
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 1px; background: var(--border);
             border: 1px solid var(--border);
-            border-radius: 6px 6px 0 0;
-            overflow: hidden;
+            border-radius: 6px 6px 0 0; overflow: hidden;
         }
         .card { background: var(--surface); padding: 28px 24px; text-align: center; }
         .card-label {
-            font-size: 10px;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--muted);
-            margin-bottom: 12px;
+            font-size: 10px; letter-spacing: 0.14em;
+            text-transform: uppercase; color: var(--muted); margin-bottom: 12px;
         }
         .card-value {
             font-family: 'Instrument Serif', serif;
-            font-size: 52px;
-            font-weight: 400;
-            line-height: 1;
-            margin-bottom: 6px;
+            font-size: 52px; font-weight: 400; line-height: 1; margin-bottom: 6px;
         }
         .card-sub { font-size: 12px; color: var(--muted); }
         .card-risk .card-value { color: var(--red); }
         .card-unusual .card-value { color: var(--amber); }
         .card-actions .card-value { color: var(--green); }
         .analysis-body {
-            border: 1px solid var(--border);
-            border-top: none;
-            border-radius: 0 0 6px 6px;
-            overflow: hidden;
+            border: 1px solid var(--border); border-top: none;
+            border-radius: 0 0 6px 6px; overflow: hidden;
         }
         .analysis-body h2 {
-            font-family: 'DM Sans', sans-serif;
-            font-size: 10px;
-            font-weight: 500;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--accent);
-            padding: 20px 28px 12px;
+            font-family: 'DM Sans', sans-serif; font-size: 10px;
+            font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
+            color: var(--accent); padding: 20px 28px 12px;
             border-top: 1px solid var(--border);
-            background: var(--surface);
-            margin: 0;
+            background: var(--surface); margin: 0;
         }
         .analysis-section-content {
-            padding: 4px 28px 24px;
-            font-size: 16px;
-            line-height: 1.9;
-            color: rgba(240,237,232,0.82);
-            background: var(--bg);
+            padding: 4px 28px 24px; font-size: 16px;
+            line-height: 1.9; color: rgba(240,237,232,0.82); background: var(--bg);
         }
         .analysis-section-content strong { color: var(--text); font-weight: 500; }
         blockquote {
-            border-left: 2px solid var(--accent);
-            margin: 12px 0;
-            padding: 8px 16px;
-            color: rgba(200,184,154,0.8);
-            font-style: italic;
-            font-size: 14px;
-            background: rgba(200,184,154,0.04);
-            border-radius: 0 4px 4px 0;
+            border-left: 2px solid var(--accent); margin: 12px 0;
+            padding: 8px 16px; color: rgba(200,184,154,0.8);
+            font-style: italic; font-size: 14px;
+            background: rgba(200,184,154,0.04); border-radius: 0 4px 4px 0;
         }
         #results-anchor { height: 1px; }
     </style>
@@ -391,6 +351,45 @@
         </div>
     </div>
 
+    <!-- TERMS MODAL -->
+    <div id="termsModal">
+        <div class="terms-box">
+            <div class="terms-header">
+                <div class="terms-title" id="termsTitle">Gebruiksvoorwaarden</div>
+                <div class="terms-subtitle" id="termsSubtitle">Lees en accepteer de voorwaarden om Juriva te gebruiken</div>
+            </div>
+            <div class="terms-body" id="termsBody">
+                <h3>1. Geen Juridisch Advies</h3>
+                <p>Juriva is een geautomatiseerd analysetool en levert geen juridisch advies. De analyses zijn uitsluitend bedoeld als ondersteunend instrument en vervangen niet het oordeel van een gekwalificeerde juridische professional. Gebruikers zijn zelf verantwoordelijk voor alle beslissingen die op basis van de analyses worden genomen.</p>
+
+                <h3>2. Beperking van Aansprakelijkheid</h3>
+                <p>Juriva B.V. en haar ontwikkelaars zijn niet aansprakelijk voor directe, indirecte, incidentele of gevolgschade die voortvloeit uit het gebruik van dit platform, inclusief maar niet beperkt tot financiële verliezen, gemiste contractuele verplichtingen of juridische geschillen die voortvloeien uit het vertrouwen op de output van dit systeem.</p>
+
+                <h3>3. Geen Garantie op Volledigheid</h3>
+                <p>Juriva streeft naar nauwkeurige analyse maar garandeert niet dat alle risico's, clausules of gebreken in een document worden geïdentificeerd. Het systeem kan fouten bevatten. Contracten dienen altijd door een bevoegde advocaat te worden gereviewed voordat zij worden ondertekend.</p>
+
+                <h3>4. Gegevensverwerking en Privacy</h3>
+                <p>Documenten die worden geüpload worden uitsluitend in tijdelijk geheugen verwerkt en nooit opgeslagen op onze servers. Na afronding van de analyse worden alle documentgegevens onmiddellijk en automatisch gewist. Juriva verkoopt, deelt of verwerkt uw documenten niet voor enig ander doel.</p>
+
+                <h3>5. Vertrouwelijkheid</h3>
+                <p>Gebruikers zijn zelf verantwoordelijk voor de vertrouwelijkheid van de documenten die zij uploaden. Juriva implementeert technische maatregelen om gegevens te beschermen, maar kan de veiligheid van documenttransmissie via het internet niet garanderen.</p>
+
+                <h3>6. Toepasselijk Recht</h3>
+                <p>Op deze voorwaarden is Nederlands recht van toepassing. Geschillen worden voorgelegd aan de bevoegde rechter in Amsterdam.</p>
+
+                <h3>7. Wijzigingen</h3>
+                <p>Juriva behoudt het recht deze voorwaarden te wijzigen. Voortgezet gebruik na wijziging geldt als acceptatie van de nieuwe voorwaarden.</p>
+            </div>
+            <div class="terms-footer">
+                <div class="terms-checkbox-row">
+                    <input type="checkbox" class="terms-checkbox" id="termsCheckbox" onchange="toggleAcceptBtn()">
+                    <label class="terms-checkbox-label" id="termsCheckboxLabel" for="termsCheckbox">Ik heb de voorwaarden gelezen en ga akkoord</label>
+                </div>
+                <button class="terms-accept-btn" id="termsAcceptBtn" disabled onclick="acceptTerms()">Doorgaan</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MAIN APP -->
     <div id="appWrapper" style="display:none; width:100%; flex-direction:column; align-items:center;">
         <div class="topbar">
@@ -405,22 +404,74 @@
         </div>
 
         <div class="main">
-            <div class="upload-zone" id="uploadZone" onclick="handleZoneClick()">
-                <div class="upload-default" id="uploadDefault">
-                    <svg class="upload-icon" width="44" height="44" viewBox="0 0 44 44" fill="none">
-                        <rect x="9" y="7" width="26" height="30" rx="2" stroke="currentColor" stroke-width="1.5"/>
-                        <path d="M15 18h14M15 23h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                        <path d="M22 31v-7M19 27l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <div class="upload-title" id="uploadTitle">Sleep uw contract hierheen</div>
-                    <div class="upload-hint" id="uploadHint">.pdf &nbsp;·&nbsp; .docx &nbsp;·&nbsp; .txt</div>
+
+            <!-- Privacy badge -->
+            <div class="privacy-badge">
+                <div class="privacy-dot"></div>
+                <span id="privacyBadge">Documenten worden nooit opgeslagen — verwerking in geheugen, direct gewist na analyse</span>
+            </div>
+
+            <!-- Primary contract upload -->
+            <div class="upload-section">
+                <div class="upload-label">
+                    <span id="labelContract">Contract</span>
+                    <span class="badge badge-required" id="badgeRequired">Verplicht</span>
                 </div>
-                <div class="file-preview" id="filePreview">
-                    <div class="file-icon">📄</div>
-                    <div class="file-name" id="fileName"></div>
-                    <div class="file-change" id="fileChange" onclick="clearFile(event)">ander bestand kiezen</div>
+                <div class="upload-zone primary" id="uploadZone" onclick="handleZoneClick('contract')">
+                    <div class="upload-default" id="uploadDefault">
+                        <svg class="upload-icon" width="44" height="44" viewBox="0 0 44 44" fill="none">
+                            <rect x="9" y="7" width="26" height="30" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M15 18h14M15 23h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M22 31v-7M19 27l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <div class="upload-title" id="uploadTitle">Sleep uw contract hierheen</div>
+                        <div class="upload-hint">.pdf &nbsp;·&nbsp; .docx &nbsp;·&nbsp; .txt</div>
+                    </div>
+                    <div class="file-preview" id="filePreview">
+                        <div class="file-icon">📄</div>
+                        <div class="file-name" id="fileName"></div>
+                        <div class="file-change" id="fileChange" onclick="clearFile(event, 'contract')">ander bestand kiezen</div>
+                    </div>
+                    <input type="file" id="fileInput" accept=".txt,.pdf,.docx">
                 </div>
-                <input type="file" id="fileInput" accept=".txt,.pdf,.docx">
+            </div>
+
+            <!-- Playbook upload — Feature 1 -->
+            <div class="upload-section">
+                <div class="upload-label">
+                    <span id="labelPlaybook">Playbook / Gouden Standaard</span>
+                    <span class="badge badge-optional" id="badgeOptional1">Optioneel</span>
+                </div>
+                <div class="upload-zone secondary" id="playbookZone" onclick="handleZoneClick('playbook')">
+                    <div class="upload-default" id="playbookDefault">
+                        <div class="upload-title small" id="playbookTitle">Upload uw kantoorstandaard voor prioritaire toetsing</div>
+                    </div>
+                    <div class="file-preview" id="playbookPreview">
+                        <div class="file-icon">📋</div>
+                        <div class="file-name" id="playbookName"></div>
+                        <div class="file-change" id="playbookChange" onclick="clearFile(event, 'playbook')">verwijderen</div>
+                    </div>
+                    <input type="file" id="playbookInput" accept=".txt,.pdf,.docx">
+                </div>
+            </div>
+
+            <!-- Second document upload — Feature 3 -->
+            <div class="upload-section">
+                <div class="upload-label">
+                    <span id="labelSecondDoc">Tweede Document</span>
+                    <span class="badge badge-optional" id="badgeOptional2">Optioneel</span>
+                </div>
+                <div class="upload-zone secondary" id="secondDocZone" onclick="handleZoneClick('secondDoc')">
+                    <div class="upload-default" id="secondDocDefault">
+                        <div class="upload-title small" id="secondDocTitle">Upload bijlage, SOW of raamovereenkomst voor kruisverwijzing</div>
+                    </div>
+                    <div class="file-preview" id="secondDocPreview">
+                        <div class="file-icon">📎</div>
+                        <div class="file-name" id="secondDocName"></div>
+                        <div class="file-change" id="secondDocChange" onclick="clearFile(event, 'secondDoc')">verwijderen</div>
+                    </div>
+                    <input type="file" id="secondDocInput" accept=".txt,.pdf,.docx">
+                </div>
             </div>
 
             <button class="analyse-btn" id="analyseBtn" disabled>
@@ -464,17 +515,11 @@
     </div>
 
     <script>
-        const fileInput = document.getElementById('fileInput');
-        const analyseBtn = document.getElementById('analyseBtn');
-        const uploadZone = document.getElementById('uploadZone');
-        const uploadDefault = document.getElementById('uploadDefault');
-        const filePreview = document.getElementById('filePreview');
-        const fileNameEl = document.getElementById('fileName');
-        const status = document.getElementById('status');
-        const results = document.getElementById('results');
-        const errorEl = document.getElementById('error');
         let selectedFile = null;
+        let selectedPlaybook = null;
+        let selectedSecondDoc = null;
         let currentLang = 'nl';
+        let termsAccepted = false;
 
         const translations = {
             nl: {
@@ -486,8 +531,16 @@
                 gateContact: 'Geen toegangscode? Vraag een gratis pilot aan.',
                 gateErrorInvalid: 'Ongeldige toegangscode. Probeer opnieuw.',
                 gateErrorExpired: 'Uw toegang is verlopen. Neem contact op via info@juriva.nl voor een abonnement.',
+                privacyBadge: 'Documenten worden nooit opgeslagen — verwerking in geheugen, direct gewist na analyse',
+                labelContract: 'Contract',
+                badgeRequired: 'Verplicht',
+                labelPlaybook: 'Playbook / Gouden Standaard',
+                badgeOptional1: 'Optioneel',
+                labelSecondDoc: 'Tweede Document',
+                badgeOptional2: 'Optioneel',
                 uploadTitle: 'Sleep uw contract hierheen',
-                uploadHint: '.pdf &nbsp;·&nbsp; .docx &nbsp;·&nbsp; .txt',
+                playbookTitle: 'Upload uw kantoorstandaard voor prioritaire toetsing',
+                secondDocTitle: 'Upload bijlage, SOW of raamovereenkomst voor kruisverwijzing',
                 fileChange: 'ander bestand kiezen',
                 btnText: 'Analyseer Contract',
                 statusText: 'Juriva analyseert uw contract...',
@@ -499,6 +552,10 @@
                 subActions: 'aanbevolen',
                 errorPrefix: 'Fout: ',
                 trialWarning: (d) => `Nog ${d} dagen toegang — neem contact op via info@juriva.nl`,
+                termsTitle: 'Gebruiksvoorwaarden',
+                termsSubtitle: 'Lees en accepteer de voorwaarden om Juriva te gebruiken',
+                termsCheckboxLabel: 'Ik heb de voorwaarden gelezen en ga akkoord',
+                termsAcceptBtn: 'Doorgaan',
                 prompt: `Je bent een expert juridisch contractreviewer.
 BELANGRIJK: Schrijf je volledige analyse in het Nederlands.
 KRITIEKE REGEL: Voor elk risico of elke clausule die je benoemt, MOET je eerst de exacte originele tekst uit het contract citeren tussen aanhalingstekens. Verzin nooit tekst. Citeer altijd eerst, analyseer dan.
@@ -539,8 +596,16 @@ Benoem clausules die normaal WEL aanwezig zijn maar in dit contract ONTBREKEN en
                 gateContact: 'No access code? Request a free pilot.',
                 gateErrorInvalid: 'Invalid access code. Please try again.',
                 gateErrorExpired: 'Your access has expired. Contact us at info@juriva.nl to subscribe.',
+                privacyBadge: 'Documents are never stored — processed in memory, deleted immediately after analysis',
+                labelContract: 'Contract',
+                badgeRequired: 'Required',
+                labelPlaybook: 'Playbook / Gold Standard',
+                badgeOptional1: 'Optional',
+                labelSecondDoc: 'Second Document',
+                badgeOptional2: 'Optional',
                 uploadTitle: 'Drop your contract here',
-                uploadHint: '.pdf &nbsp;·&nbsp; .docx &nbsp;·&nbsp; .txt',
+                playbookTitle: 'Upload your firm\'s standard for priority checking',
+                secondDocTitle: 'Upload appendix, SOW or framework agreement for cross-referencing',
                 fileChange: 'choose a different file',
                 btnText: 'Analyse Contract',
                 statusText: 'Juriva is analysing your contract...',
@@ -552,6 +617,10 @@ Benoem clausules die normaal WEL aanwezig zijn maar in dit contract ONTBREKEN en
                 subActions: 'recommended',
                 errorPrefix: 'Error: ',
                 trialWarning: (d) => `${d} days remaining — contact us at info@juriva.nl`,
+                termsTitle: 'Terms & Conditions',
+                termsSubtitle: 'Please read and accept the terms to use Juriva',
+                termsCheckboxLabel: 'I have read the terms and conditions and agree',
+                termsAcceptBtn: 'Continue',
                 prompt: `You are an expert legal contract reviewer.
 IMPORTANT: Respond entirely in English regardless of the contract language.
 CRITICAL RULE: For every risk or clause you identify, you MUST first quote the exact original text from the contract in quotation marks. Never paraphrase or invent text. Always quote first, then analyse.
@@ -585,15 +654,21 @@ Identify clauses that are normally present but MISSING from this contract and wh
             }
         };
 
-        // Check auth on load
+        // ── INIT ──
         window.addEventListener('load', async () => {
             const res = await fetch('/api/check-auth');
             const data = await res.json();
             if (data.authenticated) {
-                showApp(data.days_remaining);
+                termsAccepted = data.terms_accepted;
+                if (termsAccepted) {
+                    showApp(data.days_remaining);
+                } else {
+                    showTerms(data.days_remaining);
+                }
             }
         });
 
+        // ── GATE ──
         async function submitCode() {
             const code = document.getElementById('codeInput').value.trim();
             const btn = document.getElementById('codeBtn');
@@ -610,7 +685,7 @@ Identify clauses that are normally present but MISSING from this contract and wh
             });
             const data = await res.json();
             if (data.success) {
-                showApp(data.days_remaining);
+                showTerms(data.days_remaining);
             } else {
                 errEl.textContent = data.error === 'expired' ? t.gateErrorExpired : t.gateErrorInvalid;
                 errEl.style.display = 'block';
@@ -623,9 +698,31 @@ Identify clauses that are normally present but MISSING from this contract and wh
             if (e.key === 'Enter') submitCode();
         });
 
-        function showApp(daysRemaining) {
+        // ── TERMS ──
+        let pendingDaysRemaining = null;
+
+        function showTerms(daysRemaining) {
+            pendingDaysRemaining = daysRemaining;
             document.getElementById('gate').classList.remove('visible');
             document.getElementById('gate').style.display = 'none';
+            document.getElementById('termsModal').classList.add('visible');
+        }
+
+        function toggleAcceptBtn() {
+            const checked = document.getElementById('termsCheckbox').checked;
+            document.getElementById('termsAcceptBtn').disabled = !checked;
+        }
+
+        async function acceptTerms() {
+            await fetch('/api/accept-terms', { method: 'POST' });
+            document.getElementById('termsModal').classList.remove('visible');
+            showApp(pendingDaysRemaining);
+        }
+
+        // ── APP ──
+        function showApp(daysRemaining) {
+            document.getElementById('gate').style.display = 'none';
+            document.getElementById('termsModal').classList.remove('visible');
             const app = document.getElementById('appWrapper');
             app.style.display = 'flex';
             if (daysRemaining !== undefined && daysRemaining <= 7) {
@@ -635,6 +732,7 @@ Identify clauses that are normally present but MISSING from this contract and wh
             }
         }
 
+        // ── LANG ──
         function setLang(lang) {
             currentLang = lang;
             const t = translations[lang];
@@ -644,8 +742,16 @@ Identify clauses that are normally present but MISSING from this contract and wh
             document.getElementById('codeInput').placeholder = t.gatePlaceholder;
             document.getElementById('codeBtn').textContent = t.gateBtnText;
             document.getElementById('gateContact').innerHTML = t.gateContact + '<br><a href="mailto:info@juriva.nl">info@juriva.nl</a>';
+            document.getElementById('privacyBadge').textContent = t.privacyBadge;
+            document.getElementById('labelContract').textContent = t.labelContract;
+            document.getElementById('badgeRequired').textContent = t.badgeRequired;
+            document.getElementById('labelPlaybook').textContent = t.labelPlaybook;
+            document.getElementById('badgeOptional1').textContent = t.badgeOptional1;
+            document.getElementById('labelSecondDoc').textContent = t.labelSecondDoc;
+            document.getElementById('badgeOptional2').textContent = t.badgeOptional2;
             document.getElementById('uploadTitle').textContent = t.uploadTitle;
-            document.getElementById('uploadHint').innerHTML = t.uploadHint;
+            document.getElementById('playbookTitle').textContent = t.playbookTitle;
+            document.getElementById('secondDocTitle').textContent = t.secondDocTitle;
             document.getElementById('fileChange').textContent = t.fileChange;
             document.getElementById('btnText').textContent = t.btnText;
             document.getElementById('statusText').textContent = t.statusText;
@@ -655,46 +761,94 @@ Identify clauses that are normally present but MISSING from this contract and wh
             document.getElementById('subUnusual').textContent = t.subUnusual;
             document.getElementById('labelActions').textContent = t.labelActions;
             document.getElementById('subActions').textContent = t.subActions;
+            document.getElementById('termsTitle').textContent = t.termsTitle;
+            document.getElementById('termsSubtitle').textContent = t.termsSubtitle;
+            document.getElementById('termsCheckboxLabel').textContent = t.termsCheckboxLabel;
+            document.getElementById('termsAcceptBtn').textContent = t.termsAcceptBtn;
             document.getElementById('btnNL').classList.toggle('active', lang === 'nl');
             document.getElementById('btnEN').classList.toggle('active', lang === 'en');
             document.documentElement.lang = lang;
         }
 
-        function handleZoneClick() {
-            if (!selectedFile) fileInput.click();
+        // ── FILE HANDLING ──
+        function handleZoneClick(type) {
+            if (type === 'contract' && !selectedFile) document.getElementById('fileInput').click();
+            if (type === 'playbook' && !selectedPlaybook) document.getElementById('playbookInput').click();
+            if (type === 'secondDoc' && !selectedSecondDoc) document.getElementById('secondDocInput').click();
         }
 
-        function clearFile(e) {
+        function clearFile(e, type) {
             e.stopPropagation();
-            selectedFile = null;
-            fileInput.value = '';
-            uploadDefault.style.display = 'flex';
-            filePreview.style.display = 'none';
-            uploadZone.classList.remove('has-file');
-            analyseBtn.disabled = true;
+            if (type === 'contract') {
+                selectedFile = null;
+                document.getElementById('fileInput').value = '';
+                document.getElementById('uploadDefault').style.display = 'flex';
+                document.getElementById('filePreview').style.display = 'none';
+                document.getElementById('uploadZone').classList.remove('has-file');
+                document.getElementById('analyseBtn').disabled = true;
+            } else if (type === 'playbook') {
+                selectedPlaybook = null;
+                document.getElementById('playbookInput').value = '';
+                document.getElementById('playbookDefault').style.display = 'flex';
+                document.getElementById('playbookPreview').style.display = 'none';
+                document.getElementById('playbookZone').classList.remove('has-file');
+            } else if (type === 'secondDoc') {
+                selectedSecondDoc = null;
+                document.getElementById('secondDocInput').value = '';
+                document.getElementById('secondDocDefault').style.display = 'flex';
+                document.getElementById('secondDocPreview').style.display = 'none';
+                document.getElementById('secondDocZone').classList.remove('has-file');
+            }
         }
 
-        function handleFile(file) {
-            selectedFile = file;
-            fileNameEl.textContent = file.name;
-            uploadDefault.style.display = 'none';
-            filePreview.style.display = 'flex';
-            uploadZone.classList.add('has-file');
-            analyseBtn.disabled = false;
+        function handleFile(file, type) {
+            if (type === 'contract') {
+                selectedFile = file;
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('uploadDefault').style.display = 'none';
+                document.getElementById('filePreview').style.display = 'flex';
+                document.getElementById('uploadZone').classList.add('has-file');
+                document.getElementById('analyseBtn').disabled = false;
+            } else if (type === 'playbook') {
+                selectedPlaybook = file;
+                document.getElementById('playbookName').textContent = file.name;
+                document.getElementById('playbookDefault').style.display = 'none';
+                document.getElementById('playbookPreview').style.display = 'flex';
+                document.getElementById('playbookZone').classList.add('has-file');
+            } else if (type === 'secondDoc') {
+                selectedSecondDoc = file;
+                document.getElementById('secondDocName').textContent = file.name;
+                document.getElementById('secondDocDefault').style.display = 'none';
+                document.getElementById('secondDocPreview').style.display = 'flex';
+                document.getElementById('secondDocZone').classList.add('has-file');
+            }
         }
 
-        uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
-        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
-        uploadZone.addEventListener('drop', e => {
-            e.preventDefault();
-            uploadZone.classList.remove('dragover');
-            const file = e.dataTransfer.files[0];
-            if (file) handleFile(file);
-        });
-        fileInput.addEventListener('change', e => {
-            if (e.target.files[0]) handleFile(e.target.files[0]);
+        // Drag and drop for all zones
+        ['uploadZone', 'playbookZone', 'secondDocZone'].forEach((zoneId, idx) => {
+            const types = ['contract', 'playbook', 'secondDoc'];
+            const zone = document.getElementById(zoneId);
+            zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+            zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+            zone.addEventListener('drop', e => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file) handleFile(file, types[idx]);
+            });
         });
 
+        document.getElementById('fileInput').addEventListener('change', e => {
+            if (e.target.files[0]) handleFile(e.target.files[0], 'contract');
+        });
+        document.getElementById('playbookInput').addEventListener('change', e => {
+            if (e.target.files[0]) handleFile(e.target.files[0], 'playbook');
+        });
+        document.getElementById('secondDocInput').addEventListener('change', e => {
+            if (e.target.files[0]) handleFile(e.target.files[0], 'secondDoc');
+        });
+
+        // ── ANALYSIS ──
         function extractScore(text) {
             const after = text.slice(text.search(/risk score|risicoscore/i));
             const num = after.match(/(\d+)/);
@@ -730,22 +884,28 @@ Identify clauses that are normally present but MISSING from this contract and wh
                 return `<h2>${title}</h2><div class="analysis-section-content">${content}</div>`;
             }).join('');
 
-            results.style.display = 'block';
+            document.getElementById('results').style.display = 'block';
             setTimeout(() => {
                 document.getElementById('results-anchor').scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
         }
 
-        analyseBtn.addEventListener('click', async () => {
+        document.getElementById('analyseBtn').addEventListener('click', async () => {
             const t = translations[currentLang];
+            const status = document.getElementById('status');
+            const results = document.getElementById('results');
+            const errorEl = document.getElementById('error');
+
             status.style.display = 'block';
             results.style.display = 'none';
             errorEl.style.display = 'none';
-            analyseBtn.disabled = true;
+            document.getElementById('analyseBtn').disabled = true;
 
             const formData = new FormData();
             formData.append('contract', selectedFile);
             formData.append('prompt', t.prompt);
+            if (selectedPlaybook) formData.append('playbook', selectedPlaybook);
+            if (selectedSecondDoc) formData.append('second_document', selectedSecondDoc);
 
             try {
                 const res = await fetch('/api/review', { method: 'POST', body: formData });
@@ -757,7 +917,7 @@ Identify clauses that are normally present but MISSING from this contract and wh
                 errorEl.style.display = 'block';
             } finally {
                 status.style.display = 'none';
-                analyseBtn.disabled = false;
+                document.getElementById('analyseBtn').disabled = false;
             }
         });
     </script>
