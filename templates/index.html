@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juriva</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #080808;
+            --surface: #0f0f0f;
+            --border: rgba(255,255,255,0.07);
+            --text: #f0ede8;
+            --muted: rgba(240,237,232,0.4);
+            --accent: #c8b89a;
+            --red: #e05555;
+            --amber: #d4a04a;
+            --green: #4aad7a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 300;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 48px 24px 80px;
+        }
+        .topbar {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+        }
+        .topbar-left {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .logo {
+            font-family: 'Instrument Serif', serif;
+            font-size: 44px;
+            color: var(--text);
+            letter-spacing: -0.02em;
+            line-height: 1;
+        }
+        .tagline {
+            font-size: 15px;
+            color: rgba(240,237,232,0.65);
+            letter-spacing: 0.03em;
+            font-style: italic;
+            font-family: 'Instrument Serif', serif;
+        }
+        .lang-toggle {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            padding: 4px;
+        }
+        .lang-btn {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            padding: 6px 14px;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            background: var(--text);
+            color: var(--bg);
+        }
+        .main { width: 100%; max-width: 1000px; }
+        .upload-zone {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            width: 100%;
+            height: 340px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: var(--surface);
+            transition: border-color 0.2s, background 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .upload-zone:hover { border-color: rgba(200,184,154,0.25); background: #111; }
+        .upload-zone.dragover { border-color: var(--accent); background: #111; }
+        .upload-zone.has-file { border-color: rgba(200,184,154,0.3); }
+        input[type="file"] { display: none; }
+        .upload-default {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            pointer-events: none;
+        }
+        .upload-icon { opacity: 0.25; }
+        .upload-title {
+            font-family: 'Instrument Serif', serif;
+            font-size: 22px;
+            color: var(--text);
+        }
+        .upload-hint { font-size: 13px; color: var(--muted); }
+        .file-preview {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            pointer-events: none;
+        }
+        .file-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(200,184,154,0.1);
+            border: 1px solid rgba(200,184,154,0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .file-name { font-size: 16px; color: var(--text); font-weight: 400; }
+        .file-change {
+            font-size: 12px;
+            color: var(--accent);
+            opacity: 0.7;
+            pointer-events: all;
+            cursor: pointer;
+        }
+        .analyse-btn {
+            width: 100%;
+            margin-top: 10px;
+            padding: 18px 24px;
+            background: var(--text);
+            color: var(--bg);
+            border: none;
+            border-radius: 6px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .analyse-btn:hover:not(:disabled) { opacity: 0.88; }
+        .analyse-btn:active:not(:disabled) { transform: scale(0.998); }
+        .analyse-btn:disabled { opacity: 0.18; cursor: not-allowed; }
+        #status {
+            display: none;
+            text-align: center;
+            padding: 48px 0;
+            width: 100%;
+        }
+        .status-inner { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+        .pulse-ring {
+            width: 48px;
+            height: 48px;
+            border: 1px solid var(--accent);
+            border-radius: 50%;
+            animation: pulse-ring 1.5s ease infinite;
+            position: relative;
+        }
+        .pulse-ring::after {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            opacity: 0.4;
+            animation: pulse-dot 1.5s ease infinite;
+        }
+        @keyframes pulse-ring {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.6; }
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+        .status-text { font-size: 15px; color: var(--muted); }
+        #error {
+            display: none;
+            margin-top: 16px;
+            padding: 16px 20px;
+            border: 1px solid rgba(224,85,85,0.3);
+            border-radius: 6px;
+            font-size: 14px;
+            color: var(--red);
+            background: rgba(224,85,85,0.05);
+            width: 100%;
+        }
+        #results { display: none; margin-top: 32px; width: 100%; }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: 6px 6px 0 0;
+            overflow: hidden;
+        }
+        .card { background: var(--surface); padding: 28px 24px; text-align: center; }
+        .card-label {
+            font-size: 10px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+        .card-value {
+            font-family: 'Instrument Serif', serif;
+            font-size: 52px;
+            font-weight: 400;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .card-sub { font-size: 12px; color: var(--muted); }
+        .card-risk .card-value { color: var(--red); }
+        .card-unusual .card-value { color: var(--amber); }
+        .card-actions .card-value { color: var(--green); }
+        .analysis-body {
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            overflow: hidden;
+        }
+        .analysis-body h2 {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--accent);
+            padding: 20px 28px 12px;
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+            margin: 0;
+        }
+        .analysis-section-content {
+            padding: 4px 28px 24px;
+            font-size: 16px;
+            line-height: 1.9;
+            color: rgba(240,237,232,0.82);
+            background: var(--bg);
+        }
+        .analysis-section-content strong {
+            color: var(--text);
+            font-weight: 500;
+        }
+        blockquote {
+            border-left: 2px solid var(--accent);
+            margin: 12px 0;
+            padding: 8px 16px;
+            color: rgba(200,184,154,0.8);
+            font-style: italic;
+            font-size: 14px;
+            background: rgba(200,184,154,0.04);
+            border-radius: 0 4px 4px 0;
+        }
+        #results-anchor { height: 1px; }
+    </style>
+</head>
+<body>
+
+    <div class="topbar">
+        <div class="topbar-left">
+            <div class="logo">Juriva</div>
+            <div class="tagline" id="tagline">A second pair of eyes that never gets tired.</div>
+        </div>
+        <div class="lang-toggle">
+            <button class="lang-btn active" id="btnNL" onclick="setLang('nl')">NL</button>
+            <button class="lang-btn" id="btnEN" onclick="setLang('en')">EN</button>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="upload-zone" id="uploadZone" onclick="handleZoneClick()">
+            <div class="upload-default" id="uploadDefault">
+                <svg class="upload-icon" width="44" height="44" viewBox="0 0 44 44" fill="none">
+                    <rect x="9" y="7" width="26" height="30" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M15 18h14M15 23h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M22 31v-7M19 27l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <div class="upload-title" id="uploadTitle">Sleep uw contract hierheen</div>
+                <div class="upload-hint" id="uploadHint">.pdf &nbsp;·&nbsp; .docx &nbsp;·&nbsp; .txt</div>
+            </div>
+            <div class="file-preview" id="filePreview">
+                <div class="file-icon">📄</div>
+                <div class="file-name" id="fileName"></div>
+                <div class="file-change" id="fileChange" onclick="clearFile(event)">ander bestand kiezen</div>
+            </div>
+            <input type="file" id="fileInput" accept=".txt,.pdf,.docx">
+        </div>
+
+        <button class="analyse-btn" id="analyseBtn" disabled>
+            <span id="btnText">Analyseer Contract</span>
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                <path d="M2 7.5h11M9 3l4.5 4.5L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+
+        <div id="status">
+            <div class="status-inner">
+                <div class="pulse-ring"></div>
+                <div class="status-text" id="statusText">Juriva analyseert uw contract...</div>
+            </div>
+        </div>
+
+        <div id="error"></div>
+        <div id="results-anchor"></div>
+
+        <div id="results">
+            <div class="cards">
+                <div class="card card-risk">
+                    <div class="card-label" id="labelRisk">Risicoscore</div>
+                    <div class="card-value" id="scoreVal">—</div>
+                    <div class="card-sub" id="subRisk">uit 10</div>
+                </div>
+                <div class="card card-unusual">
+                    <div class="card-label" id="labelUnusual">Ongebruikelijk</div>
+                    <div class="card-value" id="unusualVal">—</div>
+                    <div class="card-sub" id="subUnusual">clausules</div>
+                </div>
+                <div class="card card-actions">
+                    <div class="card-label" id="labelActions">Acties</div>
+                    <div class="card-value" id="actionsVal">—</div>
+                    <div class="card-sub" id="subActions">aanbevolen</div>
+                </div>
+            </div>
+            <div class="analysis-body" id="analysisBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const analyseBtn = document.getElementById('analyseBtn');
+        const uploadZone = document.getElementById('uploadZone');
+        const uploadDefault = document.getElementById('uploadDefault');
+        const filePreview = document.getElementById('filePreview');
+        const fileNameEl = document.getElementById('fileName');
+        const status = document.getElementById('status');
+        const results = document.getElementById('results');
+        const errorEl = document.getElementById('error');
+        let selectedFile = null;
+        let currentLang = 'nl';
+
+        const translations = {
+            nl: {
+                tagline: 'Een tweede paar ogen dat nooit moe wordt.',
+                uploadTitle: 'Sleep uw contract hierheen',
+                uploadHint: '.pdf &nbsp;·&nbsp; .docx &nbsp;·&nbsp; .txt',
+                fileChange: 'ander bestand kiezen',
+                btnText: 'Analyseer Contract',
+                statusText: 'Juriva analyseert uw contract...',
+                labelRisk: 'Risicoscore',
+                subRisk: 'uit 10',
+                labelUnusual: 'Ongebruikelijk',
+                subUnusual: 'clausules',
+                labelActions: 'Acties',
+                subActions: 'aanbevolen',
+                errorPrefix: 'Fout: ',
+                prompt: `Je bent een expert juridisch contractreviewer.
+BELANGRIJK: Schrijf je volledige analyse in het Nederlands.
+KRITIEKE REGEL: Voor elk risico of elke clausule die je benoemt, MOET je eerst de exacte originele tekst uit het contract citeren tussen aanhalingstekens. Verzin nooit tekst. Citeer altijd eerst, analyseer dan.
+
+Analyseer dit contract en geef een rapport met PRECIES deze secties:
+
+## RISICOSCORE
+Score 1-10 (10 = hoogste risico) met één zin uitleg.
+
+## TOP 3 RISICO'S
+Voor elk risico:
+- CITAAT: "[exacte tekst uit het contract]"
+- ARTIKEL: Vermeld het artikelnummer
+- RISICO: Waarom is dit problematisch?
+- IMPACT: Wat kan er concreet misgaan?
+
+## SAMENVATTING
+5 kernpunten in gewone taal. Gebruik geen juridisch jargon.
+
+## ONGEBRUIKELIJKE CLAUSULES
+Voor elke ongebruikelijke clausule:
+- CITAAT: "[exacte tekst uit het contract]"
+- ARTIKEL: Vermeld het artikelnummer
+- TOELICHTING: Waarom is dit niet standaard?
+
+## AANBEVOLEN ACTIES
+Genummerde lijst van concrete acties vóór ondertekening. Wees specifiek — geen vage adviezen.
+
+## ONTBREKENDE STANDAARDCLAUSULES
+Benoem clausules die normaal WEL aanwezig zijn maar in dit contract ONTBREKEN en waarom dit risicovol is.`
+            },
+            en: {
+                tagline: 'A second pair of eyes that never gets tired.',
+                uploadTitle: 'Drop your contract here',
+                uploadHint: '.pdf &nbsp;·&nbsp; .docx &nbsp;·&nbsp; .txt',
+                fileChange: 'choose a different file',
+                btnText: 'Analyse Contract',
+                statusText: 'Juriva is analysing your contract...',
+                labelRisk: 'Risk Score',
+                subRisk: 'out of 10',
+                labelUnusual: 'Unusual',
+                subUnusual: 'clauses',
+                labelActions: 'Actions',
+                subActions: 'recommended',
+                errorPrefix: 'Error: ',
+                prompt: `You are an expert legal contract reviewer.
+IMPORTANT: Respond entirely in English regardless of the contract language.
+CRITICAL RULE: For every risk or clause you identify, you MUST first quote the exact original text from the contract in quotation marks. Never paraphrase or invent text. Always quote first, then analyse.
+
+Analyse this contract and provide a report with EXACTLY these sections:
+
+## RISK SCORE
+Score 1-10 (10 = highest risk) with one sentence explanation.
+
+## TOP 3 RISKS
+For each risk:
+- QUOTE: "[exact text from the contract]"
+- ARTICLE: State the article or section number
+- RISK: Why is this problematic?
+- IMPACT: What could concretely go wrong?
+
+## SUMMARY
+5 key points in plain language. No legal jargon.
+
+## UNUSUAL CLAUSES
+For each unusual clause:
+- QUOTE: "[exact text from the contract]"
+- ARTICLE: State the article or section number
+- EXPLANATION: Why is this non-standard?
+
+## RECOMMENDED ACTIONS
+Numbered list of concrete actions before signing. Be specific — no vague advice.
+
+## MISSING STANDARD CLAUSES
+Identify clauses that are normally present but MISSING from this contract and why this creates risk.`
+            }
+        };
+
+        function setLang(lang) {
+            currentLang = lang;
+            const t = translations[lang];
+            document.getElementById('tagline').textContent = t.tagline;
+            document.getElementById('uploadTitle').textContent = t.uploadTitle;
+            document.getElementById('uploadHint').innerHTML = t.uploadHint;
+            document.getElementById('fileChange').textContent = t.fileChange;
+            document.getElementById('btnText').textContent = t.btnText;
+            document.getElementById('statusText').textContent = t.statusText;
+            document.getElementById('labelRisk').textContent = t.labelRisk;
+            document.getElementById('subRisk').textContent = t.subRisk;
+            document.getElementById('labelUnusual').textContent = t.labelUnusual;
+            document.getElementById('subUnusual').textContent = t.subUnusual;
+            document.getElementById('labelActions').textContent = t.labelActions;
+            document.getElementById('subActions').textContent = t.subActions;
+            document.getElementById('btnNL').classList.toggle('active', lang === 'nl');
+            document.getElementById('btnEN').classList.toggle('active', lang === 'en');
+            document.documentElement.lang = lang;
+        }
+
+        function handleZoneClick() {
+            if (!selectedFile) fileInput.click();
+        }
+
+        function clearFile(e) {
+            e.stopPropagation();
+            selectedFile = null;
+            fileInput.value = '';
+            uploadDefault.style.display = 'flex';
+            filePreview.style.display = 'none';
+            uploadZone.classList.remove('has-file');
+            analyseBtn.disabled = true;
+        }
+
+        function handleFile(file) {
+            selectedFile = file;
+            fileNameEl.textContent = file.name;
+            uploadDefault.style.display = 'none';
+            filePreview.style.display = 'flex';
+            uploadZone.classList.add('has-file');
+            analyseBtn.disabled = false;
+        }
+
+        uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+        uploadZone.addEventListener('drop', e => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+        fileInput.addEventListener('change', e => {
+            if (e.target.files[0]) handleFile(e.target.files[0]);
+        });
+
+        function extractScore(text) {
+            const after = text.slice(text.search(/risk score|risicoscore/i));
+            const num = after.match(/(\d+)/);
+            return num ? num[1] : '?';
+        }
+
+        function countSection(text, ...keywords) {
+            const sections = text.split(/(?=##\s)/);
+            for (const s of sections) {
+                if (keywords.some(k => s.toLowerCase().includes(k.toLowerCase()))) {
+                    const items = s.match(/^\s*\d+\.|^\s*[*\-•]/gm);
+                    return items ? items.length : '?';
+                }
+            }
+            return '?';
+        }
+
+        function renderAnalysis(text) {
+            document.getElementById('scoreVal').textContent = extractScore(text);
+            document.getElementById('unusualVal').textContent = countSection(text, 'ongebruikelijke', 'unusual');
+            document.getElementById('actionsVal').textContent = countSection(text, 'aanbevolen acties', 'recommended actions');
+
+            const sections = text.split(/##\s+/).filter(Boolean);
+            const body = document.getElementById('analysisBody');
+            body.innerHTML = sections.map(section => {
+                const lines = section.split('\n');
+                const title = lines[0].trim();
+                const content = lines.slice(1).join('\n').trim()
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/- CITAAT: "(.*?)"/g, '<blockquote>$1</blockquote>')
+                    .replace(/- QUOTE: "(.*?)"/g, '<blockquote>$1</blockquote>')
+                    .replace(/\n/g, '<br>');
+                return `<h2>${title}</h2><div class="analysis-section-content">${content}</div>`;
+            }).join('');
+
+            results.style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('results-anchor').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+
+        analyseBtn.addEventListener('click', async () => {
+            const t = translations[currentLang];
+            status.style.display = 'block';
+            results.style.display = 'none';
+            errorEl.style.display = 'none';
+            analyseBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('contract', selectedFile);
+            formData.append('prompt', t.prompt);
+
+            try {
+                const res = await fetch('/api/review', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                renderAnalysis(data.analysis);
+            } catch (err) {
+                errorEl.textContent = t.errorPrefix + err.message;
+                errorEl.style.display = 'block';
+            } finally {
+                status.style.display = 'none';
+                analyseBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
