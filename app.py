@@ -5,6 +5,7 @@ import zipfile
 from xml.etree import ElementTree as ET
 import io
 import os
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-ADMIN-SECRET"
@@ -12,7 +13,10 @@ app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-ADMIN-SECRET"
 client = Groq(api_key=os.environ.get("GROQ_API_KEY") or "your-groq-key-here")
 
 # ─────────────────────────────────────────
-# ACCESS CODES — add or remove codes here
+# ACCESS CODES
+# Each code can only be activated once.
+# After activation it expires in 14 days.
+# Add new codes here as needed.
 # ─────────────────────────────────────────
 VALID_CODES = {
     "JURIVA-PILOT-1",
@@ -21,6 +25,13 @@ VALID_CODES = {
     "JURIVA-PILOT-4",
     "JURIVA-PILOT-5",
 }
+
+# Stores activation times: { "CODE": "2024-03-11T10:00:00" }
+# This resets when the server restarts on Railway.
+# Good enough for now — we'll add a database later.
+code_activations = {}
+
+TRIAL_DAYS = 14
 
 def extract_text(file):
     filename = file.filename.lower()
@@ -37,6 +48,24 @@ def extract_text(file):
     else:
         return file.read().decode('utf-8')
 
+def is_code_valid(code):
+    if code not in VALID_CODES:
+        return False, "invalid"
+    if code in code_activations:
+        activated_at = datetime.fromisoformat(code_activations[code])
+        expires_at = activated_at + timedelta(days=TRIAL_DAYS)
+        if datetime.now() > expires_at:
+            return False, "expired"
+    return True, "ok"
+
+def days_remaining(code):
+    if code not in code_activations:
+        return TRIAL_DAYS
+    activated_at = datetime.fromisoformat(code_activations[code])
+    expires_at = activated_at + timedelta(days=TRIAL_DAYS)
+    remaining = (expires_at - datetime.now()).days
+    return max(0, remaining)
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -45,20 +74,62 @@ def home():
 def verify_code():
     data = request.get_json()
     code = data.get('code', '').strip().upper()
-    if code in VALID_CODES:
-        session['authenticated'] = True
-        session['code'] = code
-        return jsonify({'success': True})
-    return jsonify({'success': False, 'error': 'Ongeldige toegangscode'})
+
+    valid, reason = is_code_valid(code)
+
+    if reason == "expired":
+        return jsonify({
+            'success': False,
+            'error': 'expired'
+        })
+
+    if not valid:
+        return jsonify({
+            'success': False,
+            'error': 'invalid'
+        })
+
+    # Activate code on first use
+    if code not in code_activations:
+        code_activations[code] = datetime.now().isoformat()
+
+    remaining = days_remaining(code)
+    session['authenticated'] = True
+    session['code'] = code
+
+    return jsonify({
+        'success': True,
+        'days_remaining': remaining
+    })
 
 @app.route('/api/check-auth', methods=['GET'])
 def check_auth():
-    return jsonify({'authenticated': session.get('authenticated', False)})
+    if not session.get('authenticated'):
+        return jsonify({'authenticated': False})
+
+    code = session.get('code', '')
+    valid, reason = is_code_valid(code)
+
+    if not valid:
+        session.clear()
+        return jsonify({'authenticated': False, 'reason': reason})
+
+    return jsonify({
+        'authenticated': True,
+        'days_remaining': days_remaining(code)
+    })
 
 @app.route('/api/review', methods=['POST'])
 def review_contract():
     if not session.get('authenticated'):
         return jsonify({'error': 'Geen toegang. Voer uw toegangscode in.'}), 401
+
+    code = session.get('code', '')
+    valid, reason = is_code_valid(code)
+    if not valid:
+        session.clear()
+        return jsonify({'error': 'expired' if reason == 'expired' else 'Geen toegang.'}), 401
+
     try:
         if 'contract' not in request.files:
             return jsonify({'error': 'No file uploaded'}), 400
