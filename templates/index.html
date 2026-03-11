@@ -84,6 +84,101 @@
             background: var(--text);
             color: var(--bg);
         }
+
+        /* ── GATE SCREEN ── */
+        #gate {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        #gate.visible { display: flex; }
+        .gate-box {
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+        .gate-logo {
+            font-family: 'Instrument Serif', serif;
+            font-size: 48px;
+            color: var(--text);
+            letter-spacing: -0.02em;
+        }
+        .gate-tagline {
+            font-family: 'Instrument Serif', serif;
+            font-style: italic;
+            font-size: 15px;
+            color: rgba(240,237,232,0.55);
+            margin-top: -16px;
+        }
+        .gate-label {
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            align-self: flex-start;
+        }
+        .gate-input-row {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+        .gate-input {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 14px 16px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            letter-spacing: 0.08em;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .gate-input:focus { border-color: var(--accent); }
+        .gate-input::placeholder { color: var(--muted); letter-spacing: 0.04em; }
+        .gate-btn {
+            background: var(--text);
+            color: var(--bg);
+            border: none;
+            border-radius: 6px;
+            padding: 14px 20px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+        .gate-btn:hover { opacity: 0.88; }
+        .gate-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .gate-error {
+            font-size: 13px;
+            color: var(--red);
+            align-self: flex-start;
+            display: none;
+        }
+        .gate-contact {
+            font-size: 12px;
+            color: var(--muted);
+            text-align: center;
+            line-height: 1.8;
+        }
+        .gate-contact a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        /* ── MAIN APP ── */
         .main { width: 100%; max-width: 1000px; }
         .upload-zone {
             border: 1px solid var(--border);
@@ -264,10 +359,7 @@
             color: rgba(240,237,232,0.82);
             background: var(--bg);
         }
-        .analysis-section-content strong {
-            color: var(--text);
-            font-weight: 500;
-        }
+        .analysis-section-content strong { color: var(--text); font-weight: 500; }
         blockquote {
             border-left: 2px solid var(--accent);
             margin: 12px 0;
@@ -283,72 +375,93 @@
 </head>
 <body>
 
-    <div class="topbar">
-        <div class="topbar-left">
-            <div class="logo">Juriva</div>
-            <div class="tagline" id="tagline">A second pair of eyes that never gets tired.</div>
-        </div>
-        <div class="lang-toggle">
-            <button class="lang-btn active" id="btnNL" onclick="setLang('nl')">NL</button>
-            <button class="lang-btn" id="btnEN" onclick="setLang('en')">EN</button>
+    <!-- GATE SCREEN -->
+    <div id="gate" class="visible">
+        <div class="gate-box">
+            <div class="gate-logo">Juriva</div>
+            <div class="gate-tagline" id="gateTagline">A second pair of eyes that never gets tired.</div>
+            <div class="gate-label" id="gateLabel">Toegangscode</div>
+            <div class="gate-input-row">
+                <input class="gate-input" id="codeInput" type="text" placeholder="JURIVA-XXXX" autocomplete="off" spellcheck="false">
+                <button class="gate-btn" id="codeBtn" onclick="submitCode()">Toegang</button>
+            </div>
+            <div class="gate-error" id="gateError">Ongeldige toegangscode. Probeer opnieuw.</div>
+            <div class="gate-contact">
+                Geen toegangscode? Vraag een gratis pilot aan.<br>
+                <a href="mailto:info@juriva.nl">info@juriva.nl</a>
+            </div>
         </div>
     </div>
 
-    <div class="main">
-        <div class="upload-zone" id="uploadZone" onclick="handleZoneClick()">
-            <div class="upload-default" id="uploadDefault">
-                <svg class="upload-icon" width="44" height="44" viewBox="0 0 44 44" fill="none">
-                    <rect x="9" y="7" width="26" height="30" rx="2" stroke="currentColor" stroke-width="1.5"/>
-                    <path d="M15 18h14M15 23h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                    <path d="M22 31v-7M19 27l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- MAIN APP -->
+    <div id="appWrapper" style="display:none; width:100%; display:none; flex-direction:column; align-items:center;">
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="logo">Juriva</div>
+                <div class="tagline" id="tagline">A second pair of eyes that never gets tired.</div>
+            </div>
+            <div class="lang-toggle">
+                <button class="lang-btn active" id="btnNL" onclick="setLang('nl')">NL</button>
+                <button class="lang-btn" id="btnEN" onclick="setLang('en')">EN</button>
+            </div>
+        </div>
+
+        <div class="main">
+            <div class="upload-zone" id="uploadZone" onclick="handleZoneClick()">
+                <div class="upload-default" id="uploadDefault">
+                    <svg class="upload-icon" width="44" height="44" viewBox="0 0 44 44" fill="none">
+                        <rect x="9" y="7" width="26" height="30" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M15 18h14M15 23h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M22 31v-7M19 27l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <div class="upload-title" id="uploadTitle">Sleep uw contract hierheen</div>
+                    <div class="upload-hint" id="uploadHint">.pdf &nbsp;·&nbsp; .docx &nbsp;·&nbsp; .txt</div>
+                </div>
+                <div class="file-preview" id="filePreview">
+                    <div class="file-icon">📄</div>
+                    <div class="file-name" id="fileName"></div>
+                    <div class="file-change" id="fileChange" onclick="clearFile(event)">ander bestand kiezen</div>
+                </div>
+                <input type="file" id="fileInput" accept=".txt,.pdf,.docx">
+            </div>
+
+            <button class="analyse-btn" id="analyseBtn" disabled>
+                <span id="btnText">Analyseer Contract</span>
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                    <path d="M2 7.5h11M9 3l4.5 4.5L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <div class="upload-title" id="uploadTitle">Sleep uw contract hierheen</div>
-                <div class="upload-hint" id="uploadHint">.pdf &nbsp;·&nbsp; .docx &nbsp;·&nbsp; .txt</div>
-            </div>
-            <div class="file-preview" id="filePreview">
-                <div class="file-icon">📄</div>
-                <div class="file-name" id="fileName"></div>
-                <div class="file-change" id="fileChange" onclick="clearFile(event)">ander bestand kiezen</div>
-            </div>
-            <input type="file" id="fileInput" accept=".txt,.pdf,.docx">
-        </div>
+            </button>
 
-        <button class="analyse-btn" id="analyseBtn" disabled>
-            <span id="btnText">Analyseer Contract</span>
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                <path d="M2 7.5h11M9 3l4.5 4.5L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </button>
-
-        <div id="status">
-            <div class="status-inner">
-                <div class="pulse-ring"></div>
-                <div class="status-text" id="statusText">Juriva analyseert uw contract...</div>
-            </div>
-        </div>
-
-        <div id="error"></div>
-        <div id="results-anchor"></div>
-
-        <div id="results">
-            <div class="cards">
-                <div class="card card-risk">
-                    <div class="card-label" id="labelRisk">Risicoscore</div>
-                    <div class="card-value" id="scoreVal">—</div>
-                    <div class="card-sub" id="subRisk">uit 10</div>
-                </div>
-                <div class="card card-unusual">
-                    <div class="card-label" id="labelUnusual">Ongebruikelijk</div>
-                    <div class="card-value" id="unusualVal">—</div>
-                    <div class="card-sub" id="subUnusual">clausules</div>
-                </div>
-                <div class="card card-actions">
-                    <div class="card-label" id="labelActions">Acties</div>
-                    <div class="card-value" id="actionsVal">—</div>
-                    <div class="card-sub" id="subActions">aanbevolen</div>
+            <div id="status">
+                <div class="status-inner">
+                    <div class="pulse-ring"></div>
+                    <div class="status-text" id="statusText">Juriva analyseert uw contract...</div>
                 </div>
             </div>
-            <div class="analysis-body" id="analysisBody"></div>
+
+            <div id="error"></div>
+            <div id="results-anchor"></div>
+
+            <div id="results">
+                <div class="cards">
+                    <div class="card card-risk">
+                        <div class="card-label" id="labelRisk">Risicoscore</div>
+                        <div class="card-value" id="scoreVal">—</div>
+                        <div class="card-sub" id="subRisk">uit 10</div>
+                    </div>
+                    <div class="card card-unusual">
+                        <div class="card-label" id="labelUnusual">Ongebruikelijk</div>
+                        <div class="card-value" id="unusualVal">—</div>
+                        <div class="card-sub" id="subUnusual">clausules</div>
+                    </div>
+                    <div class="card card-actions">
+                        <div class="card-label" id="labelActions">Acties</div>
+                        <div class="card-value" id="actionsVal">—</div>
+                        <div class="card-sub" id="subActions">aanbevolen</div>
+                    </div>
+                </div>
+                <div class="analysis-body" id="analysisBody"></div>
+            </div>
         </div>
     </div>
 
@@ -368,6 +481,12 @@
         const translations = {
             nl: {
                 tagline: 'Een tweede paar ogen dat nooit moe wordt.',
+                gateTagline: 'Een tweede paar ogen dat nooit moe wordt.',
+                gateLabel: 'Toegangscode',
+                gatePlaceholder: 'JURIVA-XXXX',
+                gateBtnText: 'Toegang',
+                gateContact: 'Geen toegangscode? Vraag een gratis pilot aan.',
+                gateError: 'Ongeldige toegangscode. Probeer opnieuw.',
                 uploadTitle: 'Sleep uw contract hierheen',
                 uploadHint: '.pdf &nbsp;·&nbsp; .docx &nbsp;·&nbsp; .txt',
                 fileChange: 'ander bestand kiezen',
@@ -413,6 +532,12 @@ Benoem clausules die normaal WEL aanwezig zijn maar in dit contract ONTBREKEN en
             },
             en: {
                 tagline: 'A second pair of eyes that never gets tired.',
+                gateTagline: 'A second pair of eyes that never gets tired.',
+                gateLabel: 'Access Code',
+                gatePlaceholder: 'JURIVA-XXXX',
+                gateBtnText: 'Enter',
+                gateContact: 'No access code? Request a free pilot.',
+                gateError: 'Invalid access code. Please try again.',
                 uploadTitle: 'Drop your contract here',
                 uploadHint: '.pdf &nbsp;·&nbsp; .docx &nbsp;·&nbsp; .txt',
                 fileChange: 'choose a different file',
@@ -458,10 +583,61 @@ Identify clauses that are normally present but MISSING from this contract and wh
             }
         };
 
+        // Check auth on load
+        window.addEventListener('load', async () => {
+            const res = await fetch('/api/check-auth');
+            const data = await res.json();
+            if (data.authenticated) {
+                showApp();
+            } else {
+                document.getElementById('gate').classList.add('visible');
+            }
+        });
+
+        async function submitCode() {
+            const code = document.getElementById('codeInput').value.trim();
+            const btn = document.getElementById('codeBtn');
+            const errorEl = document.getElementById('gateError');
+            if (!code) return;
+            btn.disabled = true;
+            btn.textContent = '...';
+            errorEl.style.display = 'none';
+            const res = await fetch('/api/verify-code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showApp();
+            } else {
+                errorEl.style.display = 'block';
+                btn.disabled = false;
+                const t = translations[currentLang];
+                btn.textContent = t.gateBtnText;
+            }
+        }
+
+        document.getElementById('codeInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') submitCode();
+        });
+
+        function showApp() {
+            document.getElementById('gate').classList.remove('visible');
+            document.getElementById('gate').style.display = 'none';
+            const app = document.getElementById('appWrapper');
+            app.style.display = 'flex';
+        }
+
         function setLang(lang) {
             currentLang = lang;
             const t = translations[lang];
             document.getElementById('tagline').textContent = t.tagline;
+            document.getElementById('gateTagline').textContent = t.gateTagline;
+            document.getElementById('gateLabel').textContent = t.gateLabel;
+            document.getElementById('codeInput').placeholder = t.gatePlaceholder;
+            document.getElementById('codeBtn').textContent = t.gateBtnText;
+            document.getElementById('gateError').textContent = t.gateError;
             document.getElementById('uploadTitle').textContent = t.uploadTitle;
             document.getElementById('uploadHint').innerHTML = t.uploadHint;
             document.getElementById('fileChange').textContent = t.fileChange;
@@ -581,3 +757,18 @@ Identify clauses that are normally present but MISSING from this contract and wh
     </script>
 </body>
 </html>
+```
+
+---
+
+## WHAT CHANGED
+
+**Gate screen** — beautiful full-screen code entry before anyone sees the tool. Matches Juriva's dark aesthetic perfectly.
+
+**5 pilot codes ready to use** in `app.py` — give one to each pilot firm:
+```
+JURIVA-PILOT-1
+JURIVA-PILOT-2
+JURIVA-PILOT-3
+JURIVA-PILOT-4
+JURIVA-PILOT-5
