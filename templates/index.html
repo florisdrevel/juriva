@@ -356,7 +356,7 @@
         <div class="footer-tc-content" id="footerTCContent"></div>
         <div class="footer-bottom">
             <div class="footer-copy" id="footerCopy">&copy; 2026 Juriva B.V. &mdash; Alle rechten voorbehouden</div>
-            <div class="footer-links"><a href="mailto:info@juriva.nl">info@juriva.nl</a></div>
+            <div class="footer-links"><a href="info.juriva@gmail.com">info.juriva@gmail.com</a></div>
         </div>
     </footer>
 </div>
@@ -520,7 +520,7 @@ function setLang(lang) {
     for (const [key, id] of Object.entries(ids)) document.getElementById(id).textContent = t[key];
     document.getElementById('codeInput').placeholder = t.gatePlaceholder;
     document.getElementById('codeBtn').textContent = t.gateBtnText;
-    document.getElementById('gateContact').innerHTML = t.gateContact + '<br><a href="mailto:info@juriva.nl">info@juriva.nl</a>';
+    document.getElementById('gateContact').innerHTML = t.gateContact + '<br><a href="mailto:"info.juriva@gmail.com">info.juriva@gmail.com</a>';
     document.getElementById('tcToggleLabel').textContent = tcOpen ? t.tcToggleLabelClose : t.tcToggleLabel;
     document.getElementById('btnNL').classList.toggle('active', lang === 'nl');
     document.getElementById('btnEN').classList.toggle('active', lang === 'en');
