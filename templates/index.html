@@ -837,6 +837,83 @@ function renderAnalysis(text, filename) {
 }
 
 
+// ── ANALYSE BUTTON — streaming ──
+document.getElementById('analyseBtn').addEventListener('click', async () => {
+    const t = T[currentLang];
+    document.getElementById('status').style.display = 'block';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('downloadRow').style.display = 'none';
+    document.getElementById('error').style.display = 'none';
+    document.getElementById('analyseBtn').disabled = true;
+
+    const formData = new FormData();
+    formData.append('contract', selectedFile);
+    formData.append('prompt', t.prompt);
+    if (selectedPlaybook) formData.append('playbook', selectedPlaybook);
+    if (selectedSecondDoc) formData.append('second_document', selectedSecondDoc);
+
+    let fullText = '';
+    let streamStarted = false;
+
+    try {
+        const res = await fetch('/api/review', {method:'POST', body: formData});
+
+        if (!res.ok) {
+            const text = await res.text();
+            try { const j = JSON.parse(text); throw new Error(j.error || 'Server error'); }
+            catch(e) { throw new Error(e.message || 'Server error'); }
+        }
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const payload = line.slice(6).trim();
+                if (payload === '[DONE]') break;
+
+                try {
+                    const chunk = JSON.parse(payload);
+                    if (chunk.error) throw new Error(chunk.error);
+                    if (chunk.token) {
+                        fullText += chunk.token;
+
+                        if (!streamStarted) {
+                            streamStarted = true;
+                            document.getElementById('status').style.display = 'none';
+                            document.getElementById('results').style.display = 'block';
+                            setTimeout(() => document.getElementById('results-anchor')
+                                .scrollIntoView({behavior:'smooth', block:'start'}), 100);
+                        }
+
+                        renderStreaming(fullText);
+                    }
+                } catch(e) {
+                    throw new Error(e.message);
+                }
+            }
+        }
+
+        if (fullText) renderAnalysis(fullText, selectedFile ? selectedFile.name : '');
+
+    } catch(err) {
+        document.getElementById('status').style.display = 'none';
+        document.getElementById('error').textContent = t.errorPrefix + err.message;
+        document.getElementById('error').style.display = 'block';
+    } finally {
+        document.getElementById('analyseBtn').disabled = false;
+    }
+});
+
 // ── DOWNLOAD REPORT AS DOCX (server-side) ──
 async function downloadReport() {
     const btn = document.getElementById('downloadBtn');
