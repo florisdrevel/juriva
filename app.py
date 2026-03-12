@@ -6,6 +6,7 @@ from xml.etree import ElementTree as ET
 import io
 import os
 import re
+import json
 from datetime import datetime, timedelta
 from docx import Document as DocxDocument
 from docx.shared import Pt, RGBColor, Inches
@@ -199,11 +200,7 @@ Add a section called ## DOCUMENT CONFLICTS at the end of your analysis.
 
         full_prompt = f"{playbook_context}{cross_ref_context}{prompt}"
 
-        response = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=4096,
-            temperature=0.1,
-            system="""You are a senior legal contract reviewer with 20 years of experience, writing for an audience of lawyers and legal professionals.
+        system_prompt = """You are a senior legal contract reviewer with 20 years of experience, writing for an audience of lawyers and legal professionals.
 
 Your readers already know the fundamentals of contract law. Never state the obvious.
 
@@ -237,22 +234,37 @@ Only assign 8+ if those clauses compound each other.
 Most commercial contracts score 3-5. Anchor there first.
 
 PRIVACY: You process documents in memory only. Never reference storing or saving documents.
-You do not hallucinate. If a contract is clean, say so.""",
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"{full_prompt}\n\nCONTRACT TEXT:\n{contract_text}"
-                }
-            ]
-        )
+You do not hallucinate. If a contract is clean, say so."""
 
-        analysis = response.content[0].text
+        # Capture for cleanup after streaming
+        _contract = contract_text
+        _playbook = playbook_text
+        _second  = second_doc_text
+
+        def generate():
+            try:
+                with client.messages.stream(
+                    model="claude-sonnet-4-6",
+                    max_tokens=4096,
+                    temperature=0.1,
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": f"{full_prompt}\n\nCONTRACT TEXT:\n{_contract}"}]
+                ) as stream:
+                    for text in stream.text_stream:
+                        # SSE format: each chunk as a data line
+                        yield f"data: {json.dumps({'token': text})}\n\n"
+                yield "data: [DONE]\n\n"
+            except Exception as e:
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            finally:
+                purge_session_data()
+
         del contract_text
         if playbook_text: del playbook_text
         if second_doc_text: del second_doc_text
-        purge_session_data()
 
-        return jsonify({'analysis': analysis})
+        return app.response_class(generate(), mimetype='text/event-stream',
+            headers={'X-Accel-Buffering': 'no', 'Cache-Control': 'no-cache'})
 
     except Exception as e:
         purge_session_data()
