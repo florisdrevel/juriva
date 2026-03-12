@@ -6,7 +6,7 @@
     <title>Juriva</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.2/docx.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
         :root {
@@ -193,6 +193,12 @@
 </head>
 <body>
 
+<!-- FIXED LANG TOGGLE — always visible on every screen -->
+<div id="globalLangToggle" style="position:fixed; top:20px; right:24px; z-index:999; display:flex; align-items:center; gap:2px; background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:4px;">
+    <button class="lang-btn active" id="btnNL" onclick="setLang('nl')">NL</button>
+    <button class="lang-btn" id="btnEN" onclick="setLang('en')">EN</button>
+</div>
+
 <!-- GATE -->
 <div id="gate" class="visible">
     <div class="gate-box">
@@ -232,10 +238,6 @@
         <div class="topbar-left">
             <div class="logo">Juriva</div>
             <div class="tagline" id="tagline">A second pair of eyes that never gets tired.</div>
-        </div>
-        <div class="lang-toggle">
-            <button class="lang-btn active" id="btnNL" onclick="setLang('nl')">NL</button>
-            <button class="lang-btn" id="btnEN" onclick="setLang('en')">EN</button>
         </div>
     </div>
 
@@ -370,9 +372,9 @@ const termsNL = `<h3>1. Geen Juridisch Advies</h3><p>Juriva is een geautomatisee
 
 const termsEN = `<h3>1. No Legal Advice</h3><p>Juriva is an automated analysis tool and does not provide legal advice. Analyses are intended solely as a supporting instrument and do not replace the judgment of a qualified legal professional. Users are solely responsible for all decisions made on the basis of the analyses.</p><h3>2. Limitation of Liability</h3><p>Juriva B.V. and its developers are not liable for direct, indirect, incidental or consequential damages arising from use of this platform, including but not limited to financial losses, missed contractual obligations, or legal disputes arising from reliance on the output of this system.</p><h3>3. No Guarantee of Completeness</h3><p>Juriva strives for accurate analysis but does not guarantee that all risks, clauses or defects in a document will be identified. The system may contain errors. Contracts should always be reviewed by a qualified lawyer before signing.</p><h3>4. Data Processing and Privacy</h3><p>Documents that are uploaded are processed exclusively in temporary memory and are never stored on our servers. Upon completion of the analysis, all document data is immediately and automatically deleted. Juriva does not sell, share or process your documents for any other purpose.</p><h3>5. Confidentiality</h3><p>Users are solely responsible for the confidentiality of the documents they upload. Juriva implements technical measures to protect data, but cannot guarantee the security of document transmission over the internet.</p><h3>6. Governing Law</h3><p>These terms are governed by Dutch law. Disputes shall be submitted to the competent court in Amsterdam.</p><h3>7. Amendments</h3><p>Juriva reserves the right to amend these terms. Continued use after amendment constitutes acceptance of the new terms.</p>`;
 
-const NL_PROMPT = `Je bent een expert juridisch contractreviewer.\nBELANGRIJK: Schrijf je volledige analyse in het Nederlands.\nKRITIEKE REGEL: Voor elk risico of elke clausule die je benoemt, MOET je eerst de exacte originele tekst uit het contract citeren tussen aanhalingstekens. Verzin nooit tekst. Citeer altijd eerst, analyseer dan.\n\nAnalyseer dit contract en geef een rapport met PRECIES deze secties:\n\n## RISICOSCORE\nGeef een score van 1-10 op basis van onderstaande rubric. Kies de score die het beste past \u2014 wees eerlijk en gedifferentieerd. Schrijf daarna \u00e9\u00e9n zin uitleg \u00e9n \u00e9\u00e9n zin die het grootste risico samenvat.\n\nRUBRIC:\n1-2: Standaard contract, geen materi\u00eble risico\u2019s, marktconform\n3-4: Enkele ongebruikelijke clausules maar beheersbaar, beperkte financi\u00eble blootstelling\n5-6: Meerdere risicovolle bepalingen, asymmetrische verplichtingen, juridisch aandacht vereist\n7-8: Ernstige risico\u2019s aanwezig: hoge financi\u00eble blootstelling, eenzijdige be\u00ebindiging, IP-verlies of aansprakelijkheidsvallen\n9-10: Contractuele tijdbom: meerdere clausules die samen een existentieel risico vormen voor de ondertekenende partij\n\n## TOP 3 RISICO\u2019S\nVoor elk risico:\n- CITAAT: \"[exacte tekst uit het contract]\"\n- ARTIKEL: Vermeld het artikelnummer\n- RISICO: Waarom is dit problematisch?\n- IMPACT: Wat kan er concreet misgaan?\n\n## SAMENVATTING\n5 kernpunten in gewone taal. Gebruik geen juridisch jargon.\n\n## ONGEBRUIKELIJKE CLAUSULES\nVoor elke ongebruikelijke clausule:\n- CITAAT: \"[exacte tekst uit het contract]\"\n- ARTIKEL: Vermeld het artikelnummer\n- TOELICHTING: Waarom is dit niet standaard?\n\n## AANBEVOLEN ACTIES\nGenummerde lijst van concrete acties v\u00f3\u00f3r ondertekening. Wees specifiek \u2014 geen vage adviezen.\n\n## ONTBREKENDE STANDAARDCLAUSULES\nBenoem clausules die normaal WEL aanwezig zijn maar in dit contract ONTBREKEN en waarom dit risicovol is.`;
+const NL_PROMPT = `Je bent een expert juridisch contractreviewer.\nBELANGRIJK: Schrijf je volledige analyse in het Nederlands.\nKRITIEKE REGEL: Voor elk risico of elke clausule die je benoemt, MOET je eerst de exacte originele tekst uit het contract citeren tussen aanhalingstekens. Verzin nooit tekst. Citeer altijd eerst, analyseer dan.\n\nAnalyseer dit contract en geef een rapport met PRECIES deze secties:\n\n## RISICOSCORE\nGeef een score van 1-10 op basis van onderstaande rubric. Wees eerlijk en gedifferentieerd — de meeste commerciële contracten scoren 3-5.\n\nRUBRIC:\n1 — Volledig standaard. Eenvoudige NDA, geen asymmetrie. Niets bijzonders.\n2 — Marktconform. Één kleine afwijking. Bijv. standaard arbeidscontract, korte opzegtermijn.\n3 — Routinematig commercieel contract. Enkele aandachtspunten. Geen serieuze blootstelling.\n4 — Meerdere niet-standaard clausules. Enige asymmetrie. Beheersbaar maar vraagt aandacht.\n5 — Meerdere problematische clausules. Reële blootstelling op één gebied. Onderhandeling aanbevolen.\n6 — Duidelijk onevenwicht. Eén of twee clausules met materieel financieel of operationeel risico.\n7 — Ernstige risico's op meerdere gebieden. Samengestelde problemen.\n8 — Gevaarlijk contract. Meerdere samengestelde risico's die samen significante blootstelling creëren.\n9 — Extreem gevaarlijk. Existentiële clausules: onbeperkte aansprakelijkheid, volledige IP-overdracht, earn-out vallen.\n10 — Roofdiercontract. Meerdere clausules ontworpen om de ondertekenende partij te vangen.\n\nKRITIEKE REGELS: Ken 7+ alleen toe als je TWEE afzonderlijke clausules kunt noemen die elk op zich hoog risico rechtvaardigen. Ken 8+ alleen toe als die clausules elkaar versterken. Schrijf daarna één zin uitleg én één zin die het grootste risico samenvat.\n\n## TOP 3 RISICO'S\nVoor elk risico:\n- CITAAT: "[exacte tekst uit het contract]"\n- ARTIKEL: Vermeld het artikelnummer\n- RISICO: Waarom is dit problematisch?\n- IMPACT: Wat kan er concreet misgaan?\n\n## SAMENVATTING\n5 kernpunten in gewone taal. Gebruik geen juridisch jargon.\n\n## ONGEBRUIKELIJKE CLAUSULES\nVoor elke ongebruikelijke clausule:\n- CITAAT: "[exacte tekst uit het contract]"\n- ARTIKEL: Vermeld het artikelnummer\n- TOELICHTING: Waarom is dit niet standaard?\n\n## AANBEVOLEN ACTIES\nGenummerde lijst van concrete acties vóór ondertekening. Wees specifiek — geen vage adviezen.\n\n## ONTBREKENDE STANDAARDCLAUSULES\nBenoem clausules die normaal WEL aanwezig zijn maar in dit contract ONTBREKEN en waarom dit risicovol is.`;
 
-const EN_PROMPT = `You are an expert legal contract reviewer.\nIMPORTANT: Respond entirely in English regardless of the contract language.\nCRITICAL RULE: For every risk or clause you identify, you MUST first quote the exact original text from the contract in quotation marks. Never paraphrase or invent text. Always quote first, then analyse.\n\nAnalyse this contract and provide a report with EXACTLY these sections:\n\n## RISK SCORE\nScore 1-10 using the rubric below. Choose the score that genuinely fits \u2014 be precise and differentiated, not conservative. Then write one sentence explanation and one sentence naming the single biggest risk.\n\nRUBRIC:\n1-2: Standard contract, no material risks, market-conforming terms\n3-4: A few unusual clauses but manageable, limited financial exposure\n5-6: Multiple risky provisions, asymmetric obligations, requires legal attention\n7-8: Serious risks present: high financial exposure, unilateral termination, IP loss or liability traps\n9-10: Contractual time bomb: multiple clauses that together create an existential risk for the signing party\n\n## TOP 3 RISKS\nFor each risk:\n- QUOTE: \"[exact text from the contract]\"\n- ARTICLE: State the article or section number\n- RISK: Why is this problematic?\n- IMPACT: What could concretely go wrong?\n\n## SUMMARY\n5 key points in plain language. No legal jargon.\n\n## UNUSUAL CLAUSES\nFor each unusual clause:\n- QUOTE: \"[exact text from the contract]\"\n- ARTICLE: State the article or section number\n- EXPLANATION: Why is this non-standard?\n\n## RECOMMENDED ACTIONS\nNumbered list of concrete actions before signing. Be specific \u2014 no vague advice.\n\n## MISSING STANDARD CLAUSES\nIdentify clauses that are normally present but MISSING from this contract and why this creates risk.`;
+const EN_PROMPT = `You are an expert legal contract reviewer.\nIMPORTANT: Respond entirely in English regardless of the contract language.\nCRITICAL RULE: For every risk or clause you identify, you MUST first quote the exact original text from the contract in quotation marks. Never paraphrase or invent text. Always quote first, then analyse.\n\nAnalyse this contract and provide a report with EXACTLY these sections:\n\n## RISK SCORE\nScore 1-10 using the rubric below. Be honest and differentiated — most commercial contracts score 3-5.\n\nRUBRIC:\n1 — Fully standard. Simple NDA, no asymmetry. Nothing unusual.\n2 — Market-conforming. One minor deviation. E.g. standard employment contract, short notice period.\n3 — Routine commercial contract. A few points to flag. No serious exposure.\n4 — Several non-standard clauses. Some asymmetry. Manageable but needs attention.\n5 — Multiple problematic clauses. Real exposure in one area. Negotiation recommended.\n6 — Clear imbalance. One or two clauses with material financial or operational risk.\n7 — Serious risks across multiple areas. Compounding problems.\n8 — High danger. Multiple compounding risks creating significant exposure together.\n9 — Extremely dangerous. Existential clauses: unlimited liability, full IP transfer, earn-out traps.\n10 — Predatory contract. Multiple clauses designed to trap the signing party.\n\nCRITICAL RULES: Only assign 7+ if you can name TWO separate clauses each independently justifying high risk. Only assign 8+ if those clauses compound each other. Then write one sentence explanation and one sentence naming the single biggest risk.\n\n## TOP 3 RISKS\nFor each risk:\n- QUOTE: "[exact text from the contract]"\n- ARTICLE: State the article or section number\n- RISK: Why is this problematic?\n- IMPACT: What could concretely go wrong?\n\n## SUMMARY\n5 key points in plain language. No legal jargon.\n\n## UNUSUAL CLAUSES\nFor each unusual clause:\n- QUOTE: "[exact text from the contract]"\n- ARTICLE: State the article or section number\n- EXPLANATION: Why is this non-standard?\n\n## RECOMMENDED ACTIONS\nNumbered list of concrete actions before signing. Be specific — no vague advice.\n\n## MISSING STANDARD CLAUSES\nIdentify clauses that are normally present but MISSING from this contract and why this creates risk.`;
 
 const T = {
     nl: {
@@ -659,9 +661,12 @@ async function downloadReport() {
     span.textContent = currentLang === 'nl' ? 'Wordt gegenereerd...' : 'Generating...';
 
     try {
+        // docx 7.x UMD exposes as window.docx
+        const docxLib = window.docx;
+        if (!docxLib) throw new Error('docx library not loaded');
         const { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle,
-                HeadingLevel, UnderlineType, ShadingType, WidthType,
-                Table, TableRow, TableCell, VerticalAlign } = docx;
+                HeadingLevel, ShadingType, WidthType,
+                Table, TableRow, TableCell, VerticalAlign } = docxLib;
 
         const nl = currentLang === 'nl';
         const dateStr = new Date().toLocaleDateString(nl ? 'nl-NL' : 'en-GB', {day:'numeric',month:'long',year:'numeric'});
@@ -940,10 +945,21 @@ async function downloadReport() {
             }]
         });
 
-        const buffer = await Packer.toBlob(doc);
+        const buffer = await Packer.toBuffer(doc);
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
         const safeName = contractName.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
         const today = new Date().toISOString().slice(0, 10);
-        saveAs(buffer, `Juriva_${safeName}_${today}.docx`);
+        const filename = `Juriva_${safeName}_${today}.docx`;
+        if (window.saveAs) {
+            saveAs(blob, filename);
+        } else {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
 
     } catch(err) {
         console.error(err);
