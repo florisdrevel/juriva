@@ -486,7 +486,9 @@ TOELICHTING: [max 25 woorden]
 3. [actie]
 
 ## ONTBREKENDE STANDAARDCLAUSULES
-[Alleen voor DIT contracttype verwachte maar ontbrekende clausules. Of: "Geen."]`;
+[Max 3 items. Alleen voor DIT contracttype verwachte maar ontbrekende clausules. Elk max 15 woorden. Of: "Geen."]
+
+STOP NA DEZE SECTIE. Geen conclusie, geen waarschuwing, geen extra secties.`;
 
 const EN_PROMPT = `You are an expert legal contract reviewer with 20 years of experience, writing for lawyers.
 
@@ -553,7 +555,9 @@ EXPLANATION: [max 25 words]
 3. [action]
 
 ## MISSING STANDARD CLAUSES
-[Only clauses expected in THIS contract type that are absent. Or: "None."]`;
+[Max 3 items. Only clauses expected in THIS contract type that are absent. Each max 15 words. Or: "None."]
+
+STOP AFTER THIS SECTION. No conclusion, no summary, no extra sections.`;
 
 const T = {
     nl: {
@@ -797,7 +801,8 @@ function formatAnalysisHTML(text) {
     // SCORE:7 — hide the raw token, already shown in card
     html = html.replace(/^SCORE:\s*\d{1,2}\s*/gm, '');
     // Strip any extra sections the model adds beyond the template
-    html = html.replace(/^(?:JURIDISCHE WAARSCHUWING|LEGAL WARNING|DISCLAIMER)[\s\S]*$/gm, '');
+    // Strip rogue sections after MISSING STANDARD CLAUSES
+    html = html.replace(/(?:JURIDISCHE WAARSCHUWING|LEGAL WARNING|DISCLAIMER|CONCLUSIE RISICOPROFIEL|CONCLUSIE|CONCLUSION)[\s\S]*$/i, '');
 
     // Sub-item headers: RISICO 1:, RISK 1:, CLAUSULE 1:, CLAUSE 1:
     html = html.replace(/^((?:RISICO|RISK|CLAUSULE|CLAUSE)\s*\d+):\s*(.*)$/gm,
