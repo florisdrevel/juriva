@@ -6,8 +6,6 @@
     <title>Juriva</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.2/docx.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
         :root {
             --bg: #080808; --surface: #0f0f0f; --border: rgba(255,255,255,0.07);
@@ -652,318 +650,35 @@ document.getElementById('analyseBtn').addEventListener('click', async () => {
     }
 });
 
-// ── DOWNLOAD REPORT AS DOCX (fully client-side) ──
+// ── DOWNLOAD REPORT AS DOCX (server-side) ──
 async function downloadReport() {
     const btn = document.getElementById('downloadBtn');
     const span = document.getElementById('downloadBtnText');
     const origText = span.textContent;
     btn.disabled = true;
     span.textContent = currentLang === 'nl' ? 'Wordt gegenereerd...' : 'Generating...';
-
     try {
-        // docx 7.x UMD exposes as window.docx
-        const docxLib = window.docx;
-        if (!docxLib) throw new Error('docx library not loaded');
-        const { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle,
-                HeadingLevel, ShadingType, WidthType,
-                Table, TableRow, TableCell, VerticalAlign } = docxLib;
-
-        const nl = currentLang === 'nl';
-        const dateStr = new Date().toLocaleDateString(nl ? 'nl-NL' : 'en-GB', {day:'numeric',month:'long',year:'numeric'});
-        const contractName = lastFilename || (nl ? 'Onbekend document' : 'Unknown document');
-
-        // Parse the raw analysis text into sections
-        const sections = lastAnalysis.split(/\n##\s+/).filter(Boolean);
-        const parsedSections = sections.map(s => {
-            const lines = s.split('\n');
-            return { title: lines[0].trim(), body: lines.slice(1).join('\n').trim() };
+        const res = await fetch('/api/download-report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ analysis: lastAnalysis, lang: currentLang, filename: lastFilename })
         });
-
-        // Extract score for the header summary card
-        const scoreMatch = lastAnalysis.match(/(?:risicoscore|risk score)[^\n]*\n.*?(\d+)/i);
-        const score = scoreMatch ? scoreMatch[1] : '?';
-
-        // Color helpers
-        const DARK = '0D0D0D';
-        const ACCENT = 'C8B89A';
-        const MUTED = '888077';
-        const RED = 'C0392B';
-        const SURFACE = 'F5F4F2';
-        const WHITE = 'FFFFFF';
-        const BORDER_COLOR = 'DDDAD6';
-
-        const HR = () => new Paragraph({
-            border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: BORDER_COLOR, space: 1 } },
-            spacing: { before: 0, after: 240 },
-            children: []
-        });
-
-        const SPACER = (pts = 160) => new Paragraph({ spacing: { before: 0, after: pts }, children: [] });
-
-        // Render a body line — handles CITAAT/QUOTE blocks, bullet lines, numbered lines, bold labels
-        function renderBodyLine(line) {
-            const trimmed = line.trim();
-            if (!trimmed) return null;
-
-            // CITAAT / QUOTE blockquote style
-            const quoteMatch = trimmed.match(/^[-–]\s*(?:CITAAT|QUOTE):\s*"(.+)"$/i);
-            if (quoteMatch) {
-                return new Paragraph({
-                    indent: { left: 720 },
-                    border: { left: { style: BorderStyle.SINGLE, size: 12, color: ACCENT, space: 8 } },
-                    spacing: { before: 80, after: 80 },
-                    children: [new TextRun({ text: quoteMatch[1], italics: true, size: 22, color: '6B6055', font: 'Georgia' })]
-                });
-            }
-
-            // Detect label: value lines (e.g. "- ARTIKEL: 3.2" or "- RISICO: ...")
-            const labelMatch = trimmed.match(/^[-–]\s*([A-Z\u00C0-\u024F]{2,}):\s*(.*)$/);
-            if (labelMatch) {
-                return new Paragraph({
-                    indent: { left: 480 },
-                    spacing: { before: 60, after: 40 },
-                    children: [
-                        new TextRun({ text: labelMatch[1] + ': ', bold: true, size: 22, color: DARK, font: 'Arial' }),
-                        new TextRun({ text: labelMatch[2], size: 22, color: '3D3830', font: 'Arial' })
-                    ]
-                });
-            }
-
-            // Numbered list item
-            const numMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
-            if (numMatch) {
-                return new Paragraph({
-                    indent: { left: 480, hanging: 300 },
-                    spacing: { before: 60, after: 60 },
-                    children: [
-                        new TextRun({ text: numMatch[1] + '.  ', bold: true, size: 22, color: ACCENT, font: 'Arial' }),
-                        new TextRun({ text: numMatch[2], size: 22, color: '3D3830', font: 'Arial' })
-                    ]
-                });
-            }
-
-            // Bullet line (- or •)
-            const bulletMatch = trimmed.match(/^[-–•]\s+(.+)$/);
-            if (bulletMatch) {
-                return new Paragraph({
-                    indent: { left: 480, hanging: 240 },
-                    spacing: { before: 60, after: 60 },
-                    children: [
-                        new TextRun({ text: '•  ', bold: true, size: 22, color: ACCENT, font: 'Arial' }),
-                        new TextRun({ text: bulletMatch[1].replace(/\*\*(.*?)\*\*/g, '$1'), size: 22, color: '3D3830', font: 'Arial' })
-                    ]
-                });
-            }
-
-            // Regular paragraph — handle **bold**
-            const parts = trimmed.split(/(\*\*.*?\*\*)/g);
-            return new Paragraph({
-                spacing: { before: 60, after: 60 },
-                children: parts.map(p => {
-                    if (p.startsWith('**') && p.endsWith('**')) {
-                        return new TextRun({ text: p.slice(2,-2), bold: true, size: 22, color: DARK, font: 'Arial' });
-                    }
-                    return new TextRun({ text: p, size: 22, color: '3D3830', font: 'Arial' });
-                }).filter(r => r)
-            });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || 'Download failed');
         }
-
-        // Build document children
-        const children = [];
-
-        // ── COVER BLOCK ──
-        // Logo
-        children.push(new Paragraph({
-            spacing: { before: 0, after: 80 },
-            children: [new TextRun({ text: 'Juriva', font: 'Georgia', size: 64, color: DARK, bold: false })]
-        }));
-        children.push(new Paragraph({
-            spacing: { before: 0, after: 320 },
-            children: [new TextRun({
-                text: nl ? 'Een tweede paar ogen dat nooit moe wordt.' : 'A second pair of eyes that never gets tired.',
-                font: 'Georgia', size: 24, italics: true, color: MUTED
-            })]
-        }));
-
-        children.push(HR());
-
-        // Report title
-        children.push(new Paragraph({
-            spacing: { before: 240, after: 80 },
-            children: [new TextRun({
-                text: nl ? 'Contractanalyse' : 'Contract Analysis',
-                font: 'Arial', size: 40, bold: true, color: DARK
-            })]
-        }));
-
-        // Meta table: filename, date, score
-        children.push(new Table({
-            width: { size: 9360, type: WidthType.DXA },
-            columnWidths: [4680, 4680],
-            rows: [
-                new TableRow({ children: [
-                    new TableCell({
-                        width: { size: 4680, type: WidthType.DXA },
-                        shading: { fill: SURFACE, type: ShadingType.CLEAR },
-                        margins: { top: 120, bottom: 120, left: 160, right: 160 },
-                        borders: {
-                            top: { style: BorderStyle.SINGLE, size: 1, color: BORDER_COLOR },
-                            bottom: { style: BorderStyle.SINGLE, size: 1, color: BORDER_COLOR },
-                            left: { style: BorderStyle.SINGLE, size: 1, color: BORDER_COLOR },
-                            right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
-                        },
-                        children: [
-                            new Paragraph({ children: [new TextRun({ text: nl ? 'Document' : 'Document', size: 18, color: MUTED, font: 'Arial' })] }),
-                            new Paragraph({ children: [new TextRun({ text: contractName, size: 22, bold: true, color: DARK, font: 'Arial' })] })
-                        ]
-                    }),
-                    new TableCell({
-                        width: { size: 4680, type: WidthType.DXA },
-                        shading: { fill: SURFACE, type: ShadingType.CLEAR },
-                        margins: { top: 120, bottom: 120, left: 160, right: 160 },
-                        borders: {
-                            top: { style: BorderStyle.SINGLE, size: 1, color: BORDER_COLOR },
-                            bottom: { style: BorderStyle.SINGLE, size: 1, color: BORDER_COLOR },
-                            left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-                            right: { style: BorderStyle.SINGLE, size: 1, color: BORDER_COLOR }
-                        },
-                        children: [
-                            new Paragraph({ children: [new TextRun({ text: nl ? 'Datum' : 'Date', size: 18, color: MUTED, font: 'Arial' })] }),
-                            new Paragraph({ children: [new TextRun({ text: dateStr, size: 22, bold: true, color: DARK, font: 'Arial' })] })
-                        ]
-                    })
-                ]}),
-                new TableRow({ children: [
-                    new TableCell({
-                        width: { size: 4680, type: WidthType.DXA },
-                        shading: { fill: WHITE, type: ShadingType.CLEAR },
-                        margins: { top: 120, bottom: 120, left: 160, right: 160 },
-                        borders: {
-                            top: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-                            bottom: { style: BorderStyle.SINGLE, size: 1, color: BORDER_COLOR },
-                            left: { style: BorderStyle.SINGLE, size: 1, color: BORDER_COLOR },
-                            right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
-                        },
-                        children: [
-                            new Paragraph({ children: [new TextRun({ text: nl ? 'Risicoscore' : 'Risk Score', size: 18, color: MUTED, font: 'Arial' })] }),
-                            new Paragraph({ children: [new TextRun({ text: `${score} / 10`, size: 36, bold: true, color: RED, font: 'Georgia' })] })
-                        ]
-                    }),
-                    new TableCell({
-                        width: { size: 4680, type: WidthType.DXA },
-                        shading: { fill: WHITE, type: ShadingType.CLEAR },
-                        margins: { top: 120, bottom: 120, left: 160, right: 160 },
-                        borders: {
-                            top: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-                            bottom: { style: BorderStyle.SINGLE, size: 1, color: BORDER_COLOR },
-                            left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-                            right: { style: BorderStyle.SINGLE, size: 1, color: BORDER_COLOR }
-                        },
-                        children: [
-                            new Paragraph({ children: [new TextRun({ text: nl ? 'Gegenereerd door' : 'Generated by', size: 18, color: MUTED, font: 'Arial' })] }),
-                            new Paragraph({ children: [new TextRun({ text: 'Juriva — juriva.nl', size: 22, bold: true, color: DARK, font: 'Arial' })] })
-                        ]
-                    })
-                ]})
-            ]
-        }));
-
-        children.push(SPACER(320));
-
-        // Disclaimer box
-        children.push(new Paragraph({
-            shading: { fill: 'FDF8F0', type: ShadingType.CLEAR },
-            border: {
-                top: { style: BorderStyle.SINGLE, size: 4, color: ACCENT },
-                bottom: { style: BorderStyle.SINGLE, size: 1, color: BORDER_COLOR },
-                left: { style: BorderStyle.SINGLE, size: 4, color: ACCENT },
-                right: { style: BorderStyle.SINGLE, size: 1, color: BORDER_COLOR }
-            },
-            indent: { left: 160, right: 160 },
-            spacing: { before: 100, after: 100 },
-            children: [new TextRun({
-                text: nl
-                    ? '⚠  Dit rapport is geen juridisch advies. Het is uitsluitend bedoeld als ondersteunend instrument. Laat elk contract altijd beoordelen door een gekwalificeerde advocaat vóór ondertekening.'
-                    : '⚠  This report does not constitute legal advice. It is intended solely as a supporting instrument. Always have every contract reviewed by a qualified lawyer before signing.',
-                size: 20, italics: true, color: '7A6A50', font: 'Arial'
-            })]
-        }));
-
-        children.push(SPACER(400));
-        children.push(HR());
-
-        // ── ANALYSIS SECTIONS ──
-        for (const section of parsedSections) {
-            if (!section.title) continue;
-
-            // Section heading
-            children.push(new Paragraph({
-                spacing: { before: 320, after: 120 },
-                children: [
-                    new TextRun({ text: '— ', size: 22, color: ACCENT, font: 'Arial' }),
-                    new TextRun({ text: section.title.toUpperCase(), size: 22, bold: true, color: DARK, font: 'Arial', characterSpacing: 40 })
-                ]
-            }));
-            children.push(HR());
-
-            // Body lines
-            const lines = section.body.split('\n');
-            for (const line of lines) {
-                if (!line.trim()) { children.push(SPACER(60)); continue; }
-                const para = renderBodyLine(line);
-                if (para) children.push(para);
-            }
-
-            children.push(SPACER(200));
-        }
-
-        // ── FOOTER NOTE ──
-        children.push(HR());
-        children.push(new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 200, after: 0 },
-            children: [new TextRun({
-                text: nl
-                    ? `Juriva contractanalyse · ${dateStr} · juriva.nl · Niet voor juridisch advies`
-                    : `Juriva contract analysis · ${dateStr} · juriva.nl · Not for legal advice`,
-                size: 18, color: MUTED, font: 'Arial', italics: true
-            })]
-        }));
-
-        const doc = new Document({
-            styles: {
-                default: { document: { run: { font: 'Arial', size: 22, color: DARK } } }
-            },
-            sections: [{
-                properties: {
-                    page: {
-                        size: { width: 11906, height: 16838 }, // A4
-                        margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 }
-                    }
-                },
-                children
-            }]
-        });
-
-        const buffer = await Packer.toBuffer(doc);
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-        const safeName = contractName.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
-        const today = new Date().toISOString().slice(0, 10);
-        const filename = `Juriva_${safeName}_${today}.docx`;
-        if (window.saveAs) {
-            saveAs(blob, filename);
-        } else {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = filename;
-            document.body.appendChild(a); a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-        }
-
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const safe = (lastFilename || 'rapport').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
+        a.href = url;
+        a.download = 'Juriva_' + safe + '_' + new Date().toISOString().slice(0, 10) + '.docx';
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch(err) {
         console.error(err);
-        alert(currentLang === 'nl' ? 'Download mislukt. Probeer opnieuw.' : 'Download failed. Please try again.');
+        alert(currentLang === 'nl' ? 'Download mislukt: ' + err.message : 'Download failed: ' + err.message);
     } finally {
         btn.disabled = false;
         span.textContent = origText;
