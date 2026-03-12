@@ -245,7 +245,7 @@ You do not hallucinate. If a contract is clean, say so."""
             try:
                 with client.messages.stream(
                     model="claude-haiku-4-5-20251001",
-                    max_tokens=4096,
+                    max_tokens=8192,
                     temperature=0.1,
                     system=system_prompt,
                     messages=[{"role": "user", "content": f"{full_prompt}\n\nCONTRACT TEXT:\n{_contract}"}]
