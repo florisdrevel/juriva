@@ -745,17 +745,26 @@ document.getElementById('secondDocInput').addEventListener('change', e => { if(e
 
 // ANALYSIS
 function extractScore(text) {
+    // Look for a standalone number after the risicoscore/risk score heading
+    const match = text.match(/(?:risicoscore|risk score)[^\n]*\n+\s*(\d{1,2})\b/i);
+    if (match) return match[1];
+    // Fallback: first number after the heading
     const after = text.slice(text.search(/risk score|risicoscore/i));
-    const num = after.match(/(\d+)/);
+    const num = after.match(/\b(\d{1,2})\b/);
     return num ? num[1] : '?';
 }
 function countSection(text, ...keywords) {
     const sections = text.split(/(?=##\s)/);
     for (const s of sections) {
-        if (keywords.some(k => s.toLowerCase().includes(k.toLowerCase()))) {
-            const items = s.match(/^\s*\d+\.|^\s*[*\-\u2022]/gm);
-            return items ? items.length : '?';
-        }
+        if (!keywords.some(k => s.toLowerCase().includes(k.toLowerCase()))) continue;
+        // Count entries by CITAAT/QUOTE blocks (unusual clauses) or numbered lines (actions)
+        const citaatCount = (s.match(/- (?:CITAAT|QUOTE):/gi) || []).length;
+        if (citaatCount > 0) return citaatCount;
+        const numberedCount = (s.match(/^\s*\d+\./gm) || []).length;
+        if (numberedCount > 0) return numberedCount;
+        // Fallback: count bullet lines
+        const bullets = (s.match(/^\s*[-•*]\s+\S/gm) || []).length;
+        return bullets > 0 ? bullets : '?';
     }
     return '?';
 }
