@@ -14,7 +14,12 @@ from docx.oxml import OxmlElement
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-ADMIN-SECRET"
-client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY") or "REDACTED-ANTHROPIC-KEY")
+
+_api_key = os.environ.get("ANTHROPIC_API_KEY")
+if not _api_key:
+    import sys
+    print("ERROR: ANTHROPIC_API_KEY environment variable is not set.", file=sys.stderr)
+client = anthropic.Anthropic(api_key=_api_key or "missing-key")
 
 # ─────────────────────────────────────────
 # ACCESS CODES — paste your valid_codes.txt block here
@@ -71,6 +76,20 @@ def days_remaining(code):
 # ─────────────────────────────────────────
 # ROUTES
 # ─────────────────────────────────────────
+
+@app.errorhandler(400)
+def bad_request(e): return jsonify({'error': str(e)}), 400
+@app.errorhandler(401)
+def unauthorized(e): return jsonify({'error': str(e)}), 401
+@app.errorhandler(403)
+def forbidden(e): return jsonify({'error': str(e)}), 403
+@app.errorhandler(404)
+def not_found(e): return jsonify({'error': str(e)}), 404
+@app.errorhandler(500)
+def server_error(e): return jsonify({'error': str(e)}), 500
+@app.errorhandler(Exception)
+def unhandled(e): return jsonify({'error': f'Server error: {str(e)}'}), 500
+
 @app.route('/')
 def home():
     return render_template('index.html')
