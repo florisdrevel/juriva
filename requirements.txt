@@ -2,5 +2,6 @@ flask
 flask-cors
 groq
 pypdf
+python-docx
 python-dotenv
 gunicorn
