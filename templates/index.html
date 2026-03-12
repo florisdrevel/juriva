@@ -12,6 +12,32 @@
             --text: #f0ede8; --muted: rgba(240,237,232,0.4); --accent: #c8b89a;
             --red: #e05555; --amber: #d4a04a; --green: #4aad7a;
         }
+        :root[data-theme="light"] {
+            --bg: #f5f3ef; --surface: #ffffff; --border: rgba(0,0,0,0.08);
+            --text: #1a1815; --muted: rgba(26,24,21,0.4); --accent: #9a7c52;
+            --red: #c0392b; --amber: #b5781a; --green: #2e8a5a;
+        }
+        /* Light mode overrides for hardcoded rgba colours */
+        :root[data-theme="light"] .upload-zone:hover,
+        :root[data-theme="light"] .upload-zone.dragover { background: #eeebe5; }
+        :root[data-theme="light"] .analysis-section-content { color: rgba(26,24,21,0.82); }
+        :root[data-theme="light"] .terms-body { color: rgba(26,24,21,0.7); }
+        :root[data-theme="light"] blockquote { color: rgba(154,124,82,0.9); background: rgba(154,124,82,0.06); }
+        :root[data-theme="light"] .footer-tc-content { color: rgba(26,24,21,0.5); }
+        :root[data-theme="light"] .footer-logo { color: rgba(26,24,21,0.35); }
+        :root[data-theme="light"] .footer-copy { color: rgba(26,24,21,0.25); }
+        :root[data-theme="light"] .footer-links a { color: rgba(26,24,21,0.3); }
+        :root[data-theme="light"] .footer-bottom { border-top-color: rgba(0,0,0,0.06); }
+        :root[data-theme="light"] .tagline { color: rgba(26,24,21,0.55); }
+        :root[data-theme="light"] .gate-tagline { color: rgba(26,24,21,0.5); }
+        :root[data-theme="light"] #termsModal { background: rgba(0,0,0,0.4); }
+        :root[data-theme="light"] .pulse-ring { border-color: var(--accent); }
+        :root[data-theme="light"] .pulse-ring::after { background: var(--accent); }
+        /* Theme toggle button */
+        .theme-btn { background: none; border: none; color: var(--muted); cursor: pointer;
+            padding: 6px 10px; border-radius: 100px; font-size: 15px; line-height: 1;
+            transition: all 0.2s; display: flex; align-items: center; }
+        .theme-btn:hover { color: var(--accent); }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { scroll-behavior: smooth; }
         body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif;
@@ -191,10 +217,13 @@
 </head>
 <body>
 
-<!-- FIXED LANG TOGGLE — always visible on every screen -->
-<div id="globalLangToggle" style="position:fixed; top:20px; right:24px; z-index:999; display:flex; align-items:center; gap:2px; background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:4px;">
-    <button class="lang-btn active" id="btnNL" onclick="setLang('nl')">NL</button>
-    <button class="lang-btn" id="btnEN" onclick="setLang('en')">EN</button>
+<!-- FIXED CONTROLS — always visible on every screen -->
+<div id="globalLangToggle" style="position:fixed; top:20px; right:24px; z-index:999; display:flex; align-items:center; gap:6px;">
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
+    <div style="display:flex; align-items:center; gap:2px; background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:4px;">
+        <button class="lang-btn active" id="btnNL" onclick="setLang('nl')">NL</button>
+        <button class="lang-btn" id="btnEN" onclick="setLang('en')">EN</button>
+    </div>
 </div>
 
 <!-- GATE -->
@@ -365,6 +394,17 @@
 let selectedFile = null, selectedPlaybook = null, selectedSecondDoc = null;
 let currentLang = 'nl', termsAccepted = false, tcOpen = false;
 let lastAnalysis = '', lastFilename = '';
+
+// ── THEME ──
+let currentTheme = localStorage.getItem('juriva-theme') || 'dark';
+function applyTheme(theme) {
+    currentTheme = theme;
+    document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : '');
+    document.getElementById('themeBtn').textContent = theme === 'light' ? '🌕' : '🌙';
+    localStorage.setItem('juriva-theme', theme);
+}
+function toggleTheme() { applyTheme(currentTheme === 'dark' ? 'light' : 'dark'); }
+applyTheme(currentTheme);
 
 const termsNL = `<h3>1. Geen Juridisch Advies</h3><p>Juriva is een geautomatiseerd analysetool en levert geen juridisch advies. De analyses zijn uitsluitend bedoeld als ondersteunend instrument en vervangen niet het oordeel van een gekwalificeerde juridische professional. Gebruikers zijn zelf verantwoordelijk voor alle beslissingen die op basis van de analyses worden genomen.</p><h3>2. Beperking van Aansprakelijkheid</h3><p>Juriva B.V. en haar ontwikkelaars zijn niet aansprakelijk voor directe, indirecte, incidentele of gevolgschade die voortvloeit uit het gebruik van dit platform, inclusief maar niet beperkt tot financi\u00eble verliezen, gemiste contractuele verplichtingen of juridische geschillen die voortvloeien uit het vertrouwen op de output van dit systeem.</p><h3>3. Geen Garantie op Volledigheid</h3><p>Juriva streeft naar nauwkeurige analyse maar garandeert niet dat alle risico\u2019s, clausules of gebreken in een document worden ge\u00efdentificeerd. Het systeem kan fouten bevatten. Contracten dienen altijd door een bevoegde advocaat te worden gereviewed voordat zij worden ondertekend.</p><h3>4. Gegevensverwerking en Privacy</h3><p>Documenten die worden ge\u00fcpload worden uitsluitend in tijdelijk geheugen verwerkt en nooit opgeslagen op onze servers. Na afronding van de analyse worden alle documentgegevens onmiddellijk en automatisch gewist. Juriva verkoopt, deelt of verwerkt uw documenten niet voor enig ander doel.</p><h3>5. Vertrouwelijkheid</h3><p>Gebruikers zijn zelf verantwoordelijk voor de vertrouwelijkheid van de documenten die zij uploaden. Juriva implementeert technische maatregelen om gegevens te beschermen, maar kan de veiligheid van documenttransmissie via het internet niet garanderen.</p><h3>6. Toepasselijk Recht</h3><p>Op deze voorwaarden is Nederlands recht van toepassing. Geschillen worden voorgelegd aan de bevoegde rechter in Amsterdam.</p><h3>7. Wijzigingen</h3><p>Juriva behoudt het recht deze voorwaarden te wijzigen. Voortgezet gebruik na wijziging geldt als acceptatie van de nieuwe voorwaarden.</p>`;
 
