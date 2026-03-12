@@ -1,11 +1,18 @@
-from flask import Flask, request, jsonify, render_template, session
+from flask import Flask, request, jsonify, render_template, session, send_file
 from groq import Groq
 import pypdf
 import zipfile
 from xml.etree import ElementTree as ET
 import io
 import os
-from datetime import datetime, timedelta
+import re
+import datetime
+from datetime import timedelta
+
+from docx import Document as DocxDocument
+from docx.shared import Pt, RGBColor, Inches
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-ADMIN-SECRET"
@@ -20,116 +27,6 @@ VALID_CODES = {
     "JURIVA-PILOT-3",
     "JURIVA-PILOT-4",
     "JURIVA-PILOT-5",
-    "JURIVA-PILOT-6",
-    "JURIVA-PILOT-7",
-    "JURIVA-PILOT-8",
-    "JURIVA-PILOT-9",
-    "JURIVA-PILOT-10",
-    "JURIVA-DENTONS-001",  # amsterdam@dentons.com
-    "JURIVA-HOUTHOFF-002",  # info@houthoff.com
-    "JURIVA-LOYENSLOEFF-003",  # tom.van.helmond@loyensloeff.com
-    "JURIVA-DLAPIPER-004",  # lex.oosterling@dlapiper.com
-    "JURIVA-ACTLEGALNETH-005",  # terry.steffens@actlegal-netherlands.com
-    "JURIVA-AMICEADVOCAT-006",  # j.vanvliet@amice-advocaten.nl
-    "JURIVA-SIXLEGAL-007",  # info@sixlegal.nl
-    "JURIVA-ROSS-008",  # info@ross.nl
-    "JURIVA-CLIFFORDCHAN-009",  # markjan.arends@cliffordchance.com
-    "JURIVA-OSBORNECLARK-010",  # jeroen.bedaux@osborneclarke.com
-    "JURIVA-DANIELSHUISM-011",  # bleker@danielshuisman.nl
-    "JURIVA-PELSRIJCKEN-012",  # abdessamad.elallaoui@pelsrijcken.nl
-    "JURIVA-RECOUP-013",  # info@recoup.nl
-    "JURIVA-BRINKHOF-014",  # info@brinkhof.com
-    "JURIVA-NAUTADUTILH-015",  # jaco.belder@nautadutilh.com
-    "JURIVA-FLORENT-016",  # kees.vandemeent@florent.nl
-    "JURIVA-LEEWAY-017",  # marga.verwoert@leeway.nl
-    "JURIVA-DELOITTE-018",  # fgrapperhaus@deloitte.nl
-    "JURIVA-LVHADVOCATEN-019",  # info@lvh-advocaten.nl
-    "JURIVA-LAWANDMORE-020",  # info@lawandmore.nl
-    "JURIVA-RUSSELL-021",  # reinier.russell@russell.nl
-    "JURIVA-VANDERMEIJAD-022",  # michielhoppenbrouwers@vandermeijadvocaten.nl
-    "JURIVA-PRINSENKOSTE-023",  # mr.prins@prinsenkosteradvocaten.nl
-    "JURIVA-MULTIWEB-024",  # vdheiden@multiweb.nl
-    "JURIVA-ADVOCATENKAN-025",  # neervoort@advocatenkantoorneervoort.nl
-    "JURIVA-KNUWERALKMAA-026",  # info@knuweralkmaar.nl
-    "JURIVA-KNUWERDENHEL-027",  # info@knuwerdenhelder.nl
-    "JURIVA-SPUISTRAAT10-028",  # info@spuistraat10.nl
-    "JURIVA-MEIJERSCANAT-029",  # info@meijerscanatan.nl
-    "JURIVA-DEBREIJ-030",  # info@debreij.nl
-    "JURIVA-LEXENCE-031",  # info@lexence.com
-    "JURIVA-STEK-032",  # info@stek.com
-    "JURIVA-VANDOORNE-033",  # info@vandoorne.com
-    "JURIVA-FLORENT-034",  # info@florent.nl
-    "JURIVA-JBLAW-035",  # info@jblaw.nl
-    "JURIVA-VRIMANMALAWY-036",  # info@vriman.nl
-    "JURIVA-VANCAMPENLIE-037",  # info@vancampenliem.com
-    "JURIVA-PLOUM-038",  # info@ploum.nl
-    "JURIVA-ACTLEGALNETH-039",  # info@act.nl
-    "JURIVA-AKD-040",  # info@akd.nl
-    "JURIVA-BANNING-041",  # info@banning.nl
-    "JURIVA-BARENTSKRANS-042",  # info@barentskrans.nl
-    "JURIVA-BIRDBIRD-043",  # info@bird.nl
-    "JURIVA-BOELSZANDERS-044",  # info@boels.nl
-    "JURIVA-BONDADVOCATE-045",  # info@bond.nl
-    "JURIVA-BRINKHOF-046",  # info@brinkhof.nl
-    "JURIVA-BRONSGEESTDE-047",  # info@bronsgeest.nl
-    "JURIVA-BUREAUBRANDE-048",  # info@bureau.nl
-    "JURIVA-BUREN-049",  # info@buren.nl
-    "JURIVA-CMS-050",  # info@cms.nl
-    "JURIVA-DAVIDSADVOCA-051",  # info@davids.nl
-    "JURIVA-DECLERCQADVO-052",  # info@de.nl
-    "JURIVA-DIRKZWAGERLE-053",  # info@dirkzwager.nl
-    "JURIVA-DUETADVOCATE-054",  # info@duet.nl
-    "JURIVA-DVANADVOCATE-055",  # info@dvan.nl
-    "JURIVA-DVDWADVOCATE-056",  # info@dvdw.nl
-    "JURIVA-EVERSSOERJAT-057",  # info@evers.nl
-    "JURIVA-FINCHDISPUTE-058",  # info@finch.nl
-    "JURIVA-FIZADVOCATEN-059",  # info@fiz.nl
-    "JURIVA-GREENBERGTRA-060",  # info@greenberg.nl
-    "JURIVA-HOLLA-061",  # info@holla.nl
-    "JURIVA-HEKKELMAN-062",  # info@hekkelman.nl
-    "JURIVA-HVGLAW-063",  # info@hvg.nl
-    "JURIVA-JAHAERAYMAKE-064",  # info@jahaeraymakers.nl
-    "JURIVA-JEBBINKSOETE-065",  # info@jebbink.nl
-    "JURIVA-KENNEDYVANDE-066",  # info@kennedy.nl
-    "JURIVA-KIENHUISHOVI-067",  # info@kienhuishoving.nl
-    "JURIVA-KIENHUISLEGA-068",  # info@kienhuis.nl
-    "JURIVA-KPMGLAWNETHE-069",  # info@kpmg.nl
-    "JURIVA-LAGRO-070",  # info@la.nl
-    "JURIVA-LXAATTORNEYS-071",  # info@lxa.nl
-    "JURIVA-MAVERICKADVO-072",  # info@maverick.nl
-    "JURIVA-NEWGROUNDLAW-073",  # info@newground.nl
-    "JURIVA-PELSRIJCKEN-074",  # info@pels.nl
-    "JURIVA-QUINZNETHERL-075",  # info@quinz.nl
-    "JURIVA-SCHAAPADVOCA-076",  # info@schaap.nl
-    "JURIVA-SEEGERSLEBKO-077",  # info@seegers.nl
-    "JURIVA-SIMMONSSIMMO-078",  # info@simmons.nl
-    "JURIVA-SQUIREPATTON-079",  # info@squire.nl
-    "JURIVA-STIBBENETHER-080",  # info@stibbe.nl
-    "JURIVA-TENHOLTERNOO-081",  # info@ten.nl
-    "JURIVA-TRIPADVOCATE-082",  # info@trip.nl
-    "JURIVA-VANBENTHEMKE-083",  # info@van.nl
-    "JURIVA-VESTIUSADVOC-084",  # info@vestius.nl
-    "JURIVA-VISSERSCHAAP-085",  # info@visser.nl
-    "JURIVA-WIJNSTAEL-086",  # info@wijn.nl
-    "JURIVA-WINDTLEGRAND-087",  # info@windt.nl
-    "JURIVA-WINTERTALING-088",  # info@wintertaling.nl
-    "JURIVA-WLADIMIROFFA-089",  # info@wladimiroff.nl
-    "JURIVA-YOURCORPORAT-090",  # info@your.nl
-    "JURIVA-ALLENOVERYNE-091",  # info@allen.nl
-    "JURIVA-BAKERMCKENZI-092",  # info@baker.nl
-    "JURIVA-CLIFFORDCHAN-093",  # info@clifford.nl
-    "JURIVA-DLAPIPERNETH-094",  # info@dla.nl
-    "JURIVA-DENTONSNETHE-095",  # info@dentons.nl
-    "JURIVA-JONESDAYAMST-096",  # info@jones.nl
-    "JURIVA-LINKLATERSAM-097",  # info@linklaters.nl
-    "JURIVA-LOYENSLOEFF-098",  # info@loyens.nl
-    "JURIVA-NAUTADUTILH-099",  # info@nautadutilh.nl
-    "JURIVA-HABRAKENRUTT-100",  # info@habrakenrutten.nl
-    "JURIVA-LAWTONLAWYER-101",  # info@lawton.nl
-    "JURIVA-TRIPELSADVOC-102",  # info@tripels.nl
-    "JURIVA-SEVERIJNHULS-103",  # info@severijn.nl
-    "JURIVA-LAWMOREEINDH-104",  # info@law.nl
-    "JURIVA-LEXENCELITIG-105",  # info@lexence.nl
 }
 
 code_activations = {}
@@ -162,17 +59,190 @@ def is_code_valid(code):
     if code not in VALID_CODES:
         return False, "invalid"
     if code in code_activations:
-        activated_at = datetime.fromisoformat(code_activations[code])
-        if datetime.now() > activated_at + timedelta(days=TRIAL_DAYS):
+        activated_at = datetime.datetime.fromisoformat(code_activations[code])
+        if datetime.datetime.now() > activated_at + timedelta(days=TRIAL_DAYS):
             return False, "expired"
     return True, "ok"
 
 def days_remaining(code):
     if code not in code_activations:
         return TRIAL_DAYS
-    activated_at = datetime.fromisoformat(code_activations[code])
-    expires_at = activated_at + timedelta(days=TRIAL_DAYS)
-    return max(0, (expires_at - datetime.now()).days)
+    activated_at = datetime.datetime.fromisoformat(code_activations[code])
+    return max(0, (activated_at + timedelta(days=TRIAL_DAYS) - datetime.datetime.now()).days)
+
+# ─────────────────────────────────────────
+# DOCX REPORT GENERATOR
+# ─────────────────────────────────────────
+def _border_bottom(para, color='C8B89A', size=4):
+    pPr = para._p.get_or_add_pPr()
+    pBdr = OxmlElement('w:pBdr')
+    b = OxmlElement('w:bottom')
+    b.set(qn('w:val'), 'single'); b.set(qn('w:sz'), str(size))
+    b.set(qn('w:space'), '4'); b.set(qn('w:color'), color)
+    pBdr.append(b); pPr.append(pBdr)
+
+def _border_left(para, color='C8B89A', size=8):
+    pPr = para._p.get_or_add_pPr()
+    pBdr = OxmlElement('w:pBdr')
+    l = OxmlElement('w:left')
+    l.set(qn('w:val'), 'single'); l.set(qn('w:sz'), str(size))
+    l.set(qn('w:space'), '8'); l.set(qn('w:color'), color)
+    pBdr.append(l); pPr.append(pBdr)
+
+def _runs(para, text, font='Arial', size=10, bold=False, italic=False, color=None):
+    """Add text with **bold** markdown support."""
+    color = color or RGBColor(0x3A, 0x34, 0x2C)
+    parts = re.split(r'\*\*(.*?)\*\*', text)
+    for i, part in enumerate(parts):
+        r = para.add_run(part)
+        r.font.name = font; r.font.size = Pt(size)
+        r.font.bold = bold or (i % 2 == 1)
+        r.font.italic = italic; r.font.color.rgb = color
+
+def build_docx_report(analysis_text, lang='nl', contract_filename=''):
+    doc = DocxDocument()
+    for section in doc.sections:
+        section.top_margin = Inches(1); section.bottom_margin = Inches(1)
+        section.left_margin = Inches(1.2); section.right_margin = Inches(1.2)
+    doc.styles['Normal'].font.name = 'Arial'
+    doc.styles['Normal'].font.size = Pt(10)
+
+    ACCENT = RGBColor(0xC8, 0xB8, 0x9A)
+    DARK   = RGBColor(0x1A, 0x18, 0x15)
+    BODY   = RGBColor(0x3A, 0x34, 0x2C)
+    MUTED  = RGBColor(0x8A, 0x7E, 0x70)
+    DIMMED = RGBColor(0xB0, 0xA4, 0x94)
+    QUOTE  = RGBColor(0x7A, 0x6C, 0x5A)
+
+    # Logo
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(0); p.paragraph_format.space_after = Pt(2)
+    r = p.add_run('Juriva')
+    r.font.name = 'Georgia'; r.font.size = Pt(30); r.font.color.rgb = DARK
+
+    # Tagline
+    tagline = 'Een tweede paar ogen dat nooit moe wordt.' if lang == 'nl' else 'A second pair of eyes that never gets tired.'
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(0); p.paragraph_format.space_after = Pt(16)
+    r = p.add_run(tagline)
+    r.font.name = 'Georgia'; r.font.size = Pt(10.5); r.font.italic = True; r.font.color.rgb = MUTED
+
+    # Divider
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(0); p.paragraph_format.space_after = Pt(14)
+    _border_bottom(p, 'C8B89A', 6)
+
+    # Meta row
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(0); p.paragraph_format.space_after = Pt(3)
+    label = 'CONTRACTANALYSE RAPPORT' if lang == 'nl' else 'CONTRACT ANALYSIS REPORT'
+    r = p.add_run(label + '   ')
+    r.font.name = 'Arial'; r.font.size = Pt(8); r.font.bold = True
+    r.font.all_caps = True; r.font.color.rgb = ACCENT
+    r = p.add_run(datetime.datetime.now().strftime('%d %B %Y'))
+    r.font.name = 'Arial'; r.font.size = Pt(8); r.font.color.rgb = DIMMED
+
+    # Filename
+    if contract_filename:
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(0); p.paragraph_format.space_after = Pt(20)
+        lbl = 'Bestand: ' if lang == 'nl' else 'File: '
+        r = p.add_run(lbl); r.font.name = 'Arial'; r.font.size = Pt(8.5); r.font.color.rgb = DIMMED
+        r = p.add_run(contract_filename); r.font.name = 'Arial'; r.font.size = Pt(8.5); r.font.color.rgb = MUTED
+    else:
+        p = doc.add_paragraph(); p.paragraph_format.space_after = Pt(10)
+
+    # ── SECTIONS ──
+    raw_sections = re.split(r'\n##\s+', '\n' + analysis_text.strip())
+    for section in [s for s in raw_sections if s.strip()]:
+        lines = section.strip().split('\n')
+        heading_text = lines[0].strip()
+        content_lines = lines[1:]
+
+        # Section heading
+        h = doc.add_paragraph()
+        h.paragraph_format.space_before = Pt(18); h.paragraph_format.space_after = Pt(8)
+        _border_bottom(h, 'C8B89A', 4)
+        r = h.add_run(heading_text.upper())
+        r.font.name = 'Arial'; r.font.size = Pt(8); r.font.bold = True
+        r.font.all_caps = True; r.font.color.rgb = ACCENT
+
+        i = 0
+        while i < len(content_lines):
+            line = content_lines[i].strip()
+            if not line:
+                i += 1; continue
+
+            # Quote
+            if re.match(r'^- (CITAAT|QUOTE):', line):
+                text = re.sub(r'^- (CITAAT|QUOTE):\s*"?', '', line).rstrip('"')
+                p = doc.add_paragraph()
+                p.paragraph_format.left_indent = Inches(0.3)
+                p.paragraph_format.space_before = Pt(6); p.paragraph_format.space_after = Pt(6)
+                _border_left(p, 'C8B89A', 8)
+                r = p.add_run('\u201c' + text + '\u201d')
+                r.font.name = 'Georgia'; r.font.size = Pt(9.5)
+                r.font.italic = True; r.font.color.rgb = QUOTE
+                i += 1; continue
+
+            # Sub-labels
+            m = re.match(r'^- (ARTIKEL|RISICO|IMPACT|TOELICHTING|ARTICLE|RISK|EXPLANATION|MISSING):\s*(.*)', line)
+            if m:
+                p = doc.add_paragraph()
+                p.paragraph_format.left_indent = Inches(0.3)
+                p.paragraph_format.space_before = Pt(2); p.paragraph_format.space_after = Pt(2)
+                r = p.add_run(m.group(1) + ': ')
+                r.font.name = 'Arial'; r.font.size = Pt(9); r.font.bold = True; r.font.color.rgb = DARK
+                r = p.add_run(m.group(2))
+                r.font.name = 'Arial'; r.font.size = Pt(9.5); r.font.color.rgb = BODY
+                i += 1; continue
+
+            # Numbered list
+            if re.match(r'^\d+\.', line):
+                p = doc.add_paragraph(style='List Number')
+                p.paragraph_format.space_before = Pt(3); p.paragraph_format.space_after = Pt(3)
+                _runs(p, re.sub(r'^\d+\.\s*', '', line), color=BODY)
+                i += 1; continue
+
+            # Bullet
+            if line.startswith('- '):
+                p = doc.add_paragraph(style='List Bullet')
+                p.paragraph_format.space_before = Pt(3); p.paragraph_format.space_after = Pt(3)
+                _runs(p, line[2:], color=BODY)
+                i += 1; continue
+
+            # Plain
+            p = doc.add_paragraph()
+            p.paragraph_format.space_before = Pt(3); p.paragraph_format.space_after = Pt(5)
+            _runs(p, line, color=BODY)
+            i += 1
+
+    # ── FOOTER ──
+    doc.add_paragraph()
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(20); p.paragraph_format.space_after = Pt(8)
+    _border_bottom(p, 'C8B89A', 4)
+
+    disc = ('Dit rapport is uitsluitend bedoeld als ondersteunend instrument en vormt geen juridisch advies. '
+            'Juriva B.V. aanvaardt geen aansprakelijkheid voor beslissingen genomen op basis van deze analyse. '
+            'Contracten dienen altijd door een bevoegde advocaat te worden beoordeeld vóór ondertekening.'
+            if lang == 'nl' else
+            'This report is intended solely as a supporting instrument and does not constitute legal advice. '
+            'Juriva B.V. accepts no liability for decisions made on the basis of this analysis. '
+            'Contracts should always be reviewed by a qualified lawyer before signing.')
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(8); p.paragraph_format.space_after = Pt(4)
+    r = p.add_run(disc)
+    r.font.name = 'Arial'; r.font.size = Pt(7.5); r.font.italic = True; r.font.color.rgb = DIMMED
+
+    p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(4)
+    r = p.add_run('juriva.nl  \u00b7  info@juriva.nl')
+    r.font.name = 'Arial'; r.font.size = Pt(7.5); r.font.color.rgb = ACCENT
+
+    buf = io.BytesIO()
+    doc.save(buf)
+    buf.seek(0)
+    return buf
 
 # ─────────────────────────────────────────
 # ROUTES
@@ -191,7 +261,7 @@ def verify_code():
     if not valid:
         return jsonify({'success': False, 'error': 'invalid'})
     if code not in code_activations:
-        code_activations[code] = datetime.now().isoformat()
+        code_activations[code] = datetime.datetime.now().isoformat()
     session['authenticated'] = True
     session['code'] = code
     session['terms_accepted'] = session.get('terms_accepted', False)
@@ -223,22 +293,17 @@ def purge_session_data():
     for key in ['last_document_text', 'last_playbook_text', 'document_chunks']:
         session.pop(key, None)
 
-# ─────────────────────────────────────────
-# CORE REVIEW ENDPOINT
-# ─────────────────────────────────────────
 @app.route('/api/review', methods=['POST'])
 def review_contract():
     if not session.get('authenticated'):
         return jsonify({'error': 'Geen toegang.'}), 401
     if not session.get('terms_accepted'):
         return jsonify({'error': 'terms_not_accepted'}), 403
-
     code = session.get('code', '')
     valid, reason = is_code_valid(code)
     if not valid:
         session.clear()
         return jsonify({'error': 'expired' if reason == 'expired' else 'Geen toegang.'}), 401
-
     try:
         if 'contract' not in request.files:
             return jsonify({'error': 'No file uploaded'}), 400
@@ -252,34 +317,30 @@ def review_contract():
 
         prompt = request.form.get('prompt', '')
 
-        # FEATURE 1: PLAYBOOK INTEGRATION
         playbook_text = None
         playbook_context = ""
         if 'playbook' in request.files and request.files['playbook'].filename:
-            playbook_file = request.files['playbook']
-            playbook_text = extract_text_from_file(playbook_file)
+            playbook_text = extract_text_from_file(request.files['playbook'])
             playbook_context = f"""
 PLAYBOOK INSTRUCTIONS:
 The user has uploaded their firm's Gold Standard playbook.
-You MUST treat deviations from this playbook as the highest priority risks —
-above all other general risks. Flag every clause that contradicts or deviates
-from the playbook standards. Quote both the playbook standard AND the contract clause.
+Treat deviations from this playbook as the highest priority risks — above all other general risks.
+Flag every clause that contradicts or deviates from the playbook standards.
+Quote both the playbook standard AND the contract clause.
 
 PLAYBOOK CONTENT:
 {playbook_text[:3000]}
 
 """
 
-        # FEATURE 3: MULTI-DOCUMENT CROSS-REFERENCING
         second_doc_text = None
         cross_ref_context = ""
         if 'second_document' in request.files and request.files['second_document'].filename:
-            second_file = request.files['second_document']
-            second_doc_text = extract_text_from_file(second_file)
+            second_doc_text = extract_text_from_file(request.files['second_document'])
             cross_ref_context = f"""
 CROSS-REFERENCE INSTRUCTIONS:
 The user has uploaded a second document (e.g. SOW, appendix, or side agreement).
-You MUST compare both documents and flag every conflict including:
+Compare both documents and flag every conflict including:
 - Conflicting payment terms or amounts
 - Conflicting dates or deadlines
 - Conflicting liability caps
@@ -307,16 +368,27 @@ Your analysis must be:
 4. HONEST: If something is missing from the contract, say so
 5. PRACTICAL: Give actionable advice, not vague warnings
 
-SCORING: Risk scores must be genuinely differentiated using this rubric:
-- 1-2: Standard contract, no material risks, market-conforming terms
-- 3-4: A few unusual clauses but manageable, limited financial exposure
-- 5-6: Multiple risky provisions, asymmetric obligations, requires legal attention
-- 7-8: Serious risks: high financial exposure, unilateral termination, IP loss or liability traps
-- 9-10: Contractual time bomb: multiple clauses that together create existential risk for the signing party
-A standard NDA is a 2. A market-rate employment contract is a 3. Reserve 8+ for contracts with multiple compounding risks. Never default to 7 or 8 without justification against the rubric.
+SCORING CALIBRATION — assign scores honestly using these anchors:
+1 — Fully standard. Simple NDA, no asymmetry. Nothing unusual.
+2 — Market-conforming. One minor deviation. E.g. standard employment contract, short notice period.
+3 — Routine commercial contract. A few clauses worth noting. No serious exposure. E.g. normal SaaS, standard service agreement.
+4 — Several non-standard clauses. Some asymmetry. Worth reviewing but manageable. E.g. SaaS with low liability cap only.
+5 — Multiple problematic clauses. Real exposure in one area. Negotiation recommended before signing.
+6 — Clear imbalance. One or two clauses with material financial or operational risk. E.g. unilateral termination + short notice.
+7 — Serious risks across multiple areas. Compounding problems. E.g. liability cap + IP ambiguity + unfair termination.
+8 — High danger. Multiple compounding risks that together create significant exposure. Hard to negotiate out of.
+9 — Extremely dangerous. Existential clauses: unlimited liability, full IP transfer to counterparty, earn-out traps, punitive penalties.
+10 — Predatory. Multiple clauses clearly designed to trap the signing party. Do not sign under any circumstances.
+
+CRITICAL CALIBRATION RULES:
+- Most standard commercial contracts score 3-5. Anchor to this range first.
+- Only assign 7+ if you can name at least TWO specific clauses each independently justifying high risk.
+- Only assign 8+ if those clauses compound each other to create existential exposure.
+- A contract with ONE bad clause (even a very bad one) is a 5-6, not an 8.
+- Do not inflate scores to seem thorough. Accurate scores build trust.
 
 PRIVACY: You process documents in memory only. Never reference storing or saving documents.
-You do not hallucinate. If you are unsure, you say so."""
+You do not hallucinate. If you are unsure, say so."""
                 },
                 {
                     "role": "user",
@@ -327,12 +399,9 @@ You do not hallucinate. If you are unsure, you say so."""
         )
 
         analysis = response.choices[0].message.content
-
         del contract_text
-        if playbook_text:
-            del playbook_text
-        if second_doc_text:
-            del second_doc_text
+        if playbook_text: del playbook_text
+        if second_doc_text: del second_doc_text
         purge_session_data()
 
         return jsonify({'analysis': analysis})
@@ -341,6 +410,33 @@ You do not hallucinate. If you are unsure, you say so."""
         purge_session_data()
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/api/download-report', methods=['POST'])
+def download_report():
+    if not session.get('authenticated'):
+        return jsonify({'error': 'Geen toegang.'}), 401
+    try:
+        data = request.get_json()
+        analysis_text = data.get('analysis', '')
+        lang = data.get('lang', 'nl')
+        contract_filename = data.get('filename', '')
+
+        if not analysis_text:
+            return jsonify({'error': 'No analysis provided'}), 400
+
+        buf = build_docx_report(analysis_text, lang=lang, contract_filename=contract_filename)
+        date_str = datetime.datetime.now().strftime('%Y-%m-%d')
+        download_name = f"Juriva_Rapport_{date_str}.docx"
+
+        return send_file(
+            buf,
+            as_attachment=True,
+            download_name=download_name,
+            mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
