@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template, session, send_file
-from groq import Groq
+import anthropic
 import pypdf
 import zipfile
 from xml.etree import ElementTree as ET
@@ -14,7 +14,7 @@ from docx.oxml import OxmlElement
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-ADMIN-SECRET"
-client = Groq(api_key=os.environ.get("GROQ_API_KEY") or "REDACTED-GROQ-KEY")
+client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY") or "REDACTED-ANTHROPIC-KEY")
 
 # ─────────────────────────────────────────
 # ACCESS CODES — paste your valid_codes.txt block here
@@ -179,12 +179,11 @@ Add a section called ## DOCUMENT CONFLICTS at the end of your analysis.
 
         full_prompt = f"{playbook_context}{cross_ref_context}{prompt}"
 
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {
-                    "role": "system",
-                    "content": """You are a senior legal contract reviewer with 20 years of experience, writing for an audience of lawyers and legal professionals.
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=4096,
+            temperature=0.1,
+            system="""You are a senior legal contract reviewer with 20 years of experience, writing for an audience of lawyers and legal professionals.
 
 Your readers already know the fundamentals of contract law. Never state the obvious.
 
@@ -218,17 +217,16 @@ Only assign 8+ if those clauses compound each other.
 Most commercial contracts score 3-5. Anchor there first.
 
 PRIVACY: You process documents in memory only. Never reference storing or saving documents.
-You do not hallucinate. If a contract is clean, say so."""
-                },
+You do not hallucinate. If a contract is clean, say so.""",
+            messages=[
                 {
                     "role": "user",
                     "content": f"{full_prompt}\n\nCONTRACT TEXT:\n{contract_text}"
                 }
-            ],
-            temperature=0.1
+            ]
         )
 
-        analysis = response.choices[0].message.content
+        analysis = response.content[0].text
         del contract_text
         if playbook_text: del playbook_text
         if second_doc_text: del second_doc_text
@@ -392,4 +390,3 @@ def download_report():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
