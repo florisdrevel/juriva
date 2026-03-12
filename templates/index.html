@@ -771,7 +771,7 @@ document.getElementById('secondDocInput').addEventListener('change', e => { if(e
 
 // ANALYSIS
 function extractScore(text) {
-    const m = text.match(/SCORE:(\d{1,2})/);
+    const m = text.match(/SCORE:\s*(\d{1,2})/);
     return m ? m[1] : '?';
 }
 
@@ -799,7 +799,7 @@ function formatAnalysisHTML(text) {
         '</div><h2>$1</h2><div class="analysis-section-content">');
 
     // SCORE:7 — hide the raw token, already shown in card
-    html = html.replace(/^SCORE:\d{1,2}\s*/gm, '');
+    html = html.replace(/^SCORE:\s*\d{1,2}\s*/gm, '');
 
     // Sub-item headers: RISICO 1:, RISK 1:, CLAUSULE 1:, CLAUSE 1:
     html = html.replace(/^((?:RISICO|RISK|CLAUSULE|CLAUSE)\s*\d+):\s*(.*)$/gm,
