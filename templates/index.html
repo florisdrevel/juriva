@@ -204,7 +204,7 @@
             <button class="gate-btn" id="codeBtn" onclick="submitCode()">Toegang</button>
         </div>
         <div class="gate-error" id="gateError"></div>
-        <div class="gate-contact" id="gateContact">Geen toegangscode? Vraag een gratis pilot aan.<br><a href="mailto:info@juriva.nl">info@juriva.nl</a></div>
+        <div class="gate-contact" id="gateContact">Geen toegangscode? Vraag een gratis pilot aan.<br><a href="mailto:info.juriva@gmail.com">info.juriva@gmail.com</a></div>
     </div>
 </div>
 
@@ -356,7 +356,7 @@
         <div class="footer-tc-content" id="footerTCContent"></div>
         <div class="footer-bottom">
             <div class="footer-copy" id="footerCopy">&copy; 2026 Juriva B.V. &mdash; Alle rechten voorbehouden</div>
-            <div class="footer-links"><a href="info.juriva@gmail.com">info.juriva@gmail.com</a></div>
+            <div class="footer-links"><a href="mailto:info.juriva@gmail.com">info.juriva@gmail.com</a></div>
         </div>
     </footer>
 </div>
@@ -380,7 +380,7 @@ const T = {
         gateLabel:'Toegangscode', gatePlaceholder:'JURIVA-XXXX', gateBtnText:'Toegang',
         gateContact:'Geen toegangscode? Vraag een gratis pilot aan.',
         gateErrorInvalid:'Ongeldige toegangscode. Probeer opnieuw.',
-        gateErrorExpired:'Uw toegang is verlopen. Neem contact op via info@juriva.nl voor een abonnement.',
+        gateErrorExpired:'Uw toegang is verlopen. Neem contact op via info.juriva@gmail.com voor een abonnement.',
         privacyBadge:'Documenten worden nooit opgeslagen \u2014 verwerking in geheugen, direct gewist na analyse',
         labelContract:'Contract', badgeRequired:'Verplicht', labelPlaybook:'Playbook / Gouden Standaard',
         badgeOptional1:'Optioneel', labelSecondDoc:'Tweede Document', badgeOptional2:'Optioneel',
@@ -392,7 +392,7 @@ const T = {
         labelRisk:'Risicoscore', subRisk:'uit 10', labelUnusual:'Ongebruikelijk',
         subUnusual:'clausules', labelActions:'Acties', subActions:'aanbevolen',
         errorPrefix:'Fout: ', downloadBtnText:'Rapport downloaden als .docx',
-        trialWarning:(d)=>`Nog ${d} dagen toegang \u2014 neem contact op via info@juriva.nl`,
+        trialWarning:(d)=>`Nog ${d} dagen toegang \u2014 neem contact op via info.juriva@gmail.com`,
         termsTitle:'Gebruiksvoorwaarden', termsSubtitle:'Lees en accepteer de voorwaarden om Juriva te gebruiken',
         termsCheckboxLabel:'Ik heb de voorwaarden gelezen en ga akkoord', termsAcceptBtn:'Doorgaan',
         tcToggleLabel:'Gebruiksvoorwaarden bekijken', tcToggleLabelClose:'Sluiten',
@@ -404,7 +404,7 @@ const T = {
         gateLabel:'Access Code', gatePlaceholder:'JURIVA-XXXX', gateBtnText:'Enter',
         gateContact:'No access code? Request a free pilot.',
         gateErrorInvalid:'Invalid access code. Please try again.',
-        gateErrorExpired:'Your access has expired. Contact us at info@juriva.nl to subscribe.',
+        gateErrorExpired:'Your access has expired. Contact us at info.juriva@gmail.com to subscribe.',
         privacyBadge:'Documents are never stored \u2014 processed in memory, deleted immediately after analysis',
         labelContract:'Contract', badgeRequired:'Required', labelPlaybook:'Playbook / Gold Standard',
         badgeOptional1:'Optional', labelSecondDoc:'Second Document', badgeOptional2:'Optional',
@@ -416,7 +416,7 @@ const T = {
         labelRisk:'Risk Score', subRisk:'out of 10', labelUnusual:'Unusual',
         subUnusual:'clauses', labelActions:'Actions', subActions:'recommended',
         errorPrefix:'Error: ', downloadBtnText:'Download report as .docx',
-        trialWarning:(d)=>`${d} days remaining \u2014 contact us at info@juriva.nl`,
+        trialWarning:(d)=>`${d} days remaining \u2014 contact us at info.juriva@gmail.com`,
         termsTitle:'Terms & Conditions', termsSubtitle:'Please read and accept the terms to use Juriva',
         termsCheckboxLabel:'I have read the terms and conditions and agree', termsAcceptBtn:'Continue',
         tcToggleLabel:'View Terms & Conditions', tcToggleLabelClose:'Close',
@@ -520,7 +520,7 @@ function setLang(lang) {
     for (const [key, id] of Object.entries(ids)) document.getElementById(id).textContent = t[key];
     document.getElementById('codeInput').placeholder = t.gatePlaceholder;
     document.getElementById('codeBtn').textContent = t.gateBtnText;
-    document.getElementById('gateContact').innerHTML = t.gateContact + '<br><a href="mailto:"info.juriva@gmail.com">info.juriva@gmail.com</a>';
+    document.getElementById('gateContact').innerHTML = t.gateContact + '<br><a href="mailto:info.juriva@gmail.com">info.juriva@gmail.com</a>';
     document.getElementById('tcToggleLabel').textContent = tcOpen ? t.tcToggleLabelClose : t.tcToggleLabel;
     document.getElementById('btnNL').classList.toggle('active', lang === 'nl');
     document.getElementById('btnEN').classList.toggle('active', lang === 'en');
