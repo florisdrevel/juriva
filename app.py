@@ -234,7 +234,8 @@ Only assign 8+ if those clauses compound each other.
 Most commercial contracts score 3-5. Anchor there first.
 
 PRIVACY: You process documents in memory only. Never reference storing or saving documents.
-You do not hallucinate. If a contract is clean, say so."""
+You do not hallucinate. If a contract is clean, say so.
+CRITICAL: Stop immediately after the ONTBREKENDE STANDAARDCLAUSULES / MISSING STANDARD CLAUSES section. Do not add conclusions, warnings, disclaimers or any other content."""
 
         # Capture for cleanup after streaming
         _contract = contract_text
