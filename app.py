@@ -244,7 +244,7 @@ You do not hallucinate. If a contract is clean, say so."""
         def generate():
             try:
                 with client.messages.stream(
-                    model="claude-sonnet-4-6",
+                    model="claude-haiku-4-5-20251001",
                     max_tokens=4096,
                     temperature=0.1,
                     system=system_prompt,
