@@ -183,6 +183,11 @@
             color: rgba(200,184,154,0.9); font-style: italic; font-size: 15px;
             background: rgba(200,184,154,0.04); border-radius: 0 4px 4px 0; }
         #results-anchor { height: 1px; }
+        /* Streaming cursor */
+        .stream-cursor { display: inline-block; width: 2px; height: 1em;
+            background: var(--accent); margin-left: 2px; vertical-align: text-bottom;
+            animation: blink 0.8s step-end infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
         /* DOWNLOAD */
         .download-row { display: flex; justify-content: flex-end; margin-top: 16px; }
         .download-btn { display: inline-flex; align-items: center; gap: 8px; background: none;
@@ -777,7 +782,7 @@ function renderAnalysis(text, filename) {
     setTimeout(() => document.getElementById('results-anchor').scrollIntoView({behavior:'smooth', block:'start'}), 100);
 }
 
-// ANALYSE BUTTON
+// ANALYSE BUTTON — streaming
 document.getElementById('analyseBtn').addEventListener('click', async () => {
     const t = T[currentLang];
     document.getElementById('status').style.display = 'block';
@@ -785,30 +790,91 @@ document.getElementById('analyseBtn').addEventListener('click', async () => {
     document.getElementById('downloadRow').style.display = 'none';
     document.getElementById('error').style.display = 'none';
     document.getElementById('analyseBtn').disabled = true;
+
     const formData = new FormData();
     formData.append('contract', selectedFile);
     formData.append('prompt', t.prompt);
     if (selectedPlaybook) formData.append('playbook', selectedPlaybook);
     if (selectedSecondDoc) formData.append('second_document', selectedSecondDoc);
+
+    let fullText = '';
+    let streamStarted = false;
+
     try {
         const res = await fetch('/api/review', {method:'POST', body: formData});
-        const contentType = res.headers.get('content-type') || '';
-        if (!contentType.includes('application/json')) {
-            throw new Error(currentLang === 'nl'
-                ? 'Serverfout — controleer of ANTHROPIC_API_KEY is ingesteld in Railway.'
-                : 'Server error — check that ANTHROPIC_API_KEY is set in Railway.');
+
+        if (!res.ok) {
+            // Non-streaming error response
+            const text = await res.text();
+            try { const j = JSON.parse(text); throw new Error(j.error || 'Server error'); }
+            catch(e) { throw new Error(e.message || 'Server error'); }
         }
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        renderAnalysis(data.analysis, selectedFile ? selectedFile.name : '');
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop(); // keep incomplete line
+
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const payload = line.slice(6).trim();
+                if (payload === '[DONE]') break;
+
+                try {
+                    const chunk = JSON.parse(payload);
+                    if (chunk.error) throw new Error(chunk.error);
+                    if (chunk.token) {
+                        fullText += chunk.token;
+
+                        // Show results area on first token
+                        if (!streamStarted) {
+                            streamStarted = true;
+                            document.getElementById('status').style.display = 'none';
+                            document.getElementById('results').style.display = 'block';
+                            setTimeout(() => document.getElementById('results-anchor')
+                                .scrollIntoView({behavior:'smooth', block:'start'}), 100);
+                        }
+
+                        // Live-render as text streams in
+                        renderStreaming(fullText);
+                    }
+                } catch(e) {
+                    throw new Error(e.message);
+                }
+            }
+        }
+
+        // Final render with complete text
+        if (fullText) renderAnalysis(fullText, selectedFile ? selectedFile.name : '');
+
     } catch(err) {
+        document.getElementById('status').style.display = 'none';
         document.getElementById('error').textContent = t.errorPrefix + err.message;
         document.getElementById('error').style.display = 'block';
     } finally {
-        document.getElementById('status').style.display = 'none';
         document.getElementById('analyseBtn').disabled = false;
     }
 });
+
+// Live render while streaming — lightweight, no section parsing yet
+function renderStreaming(text) {
+    const body = document.getElementById('analysisBody');
+    const formatted = text
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/## (.+)/g, '</div><h2>$1</h2><div class="analysis-section-content">')
+        .replace(/- CITAAT: &quot;(.*?)&quot;/g, '<blockquote>$1</blockquote>')
+        .replace(/- QUOTE: &quot;(.*?)&quot;/g, '<blockquote>$1</blockquote>')
+        .replace(/\n/g, '<br>');
+    body.innerHTML = '<div class="analysis-section-content">' + formatted + '<span class="stream-cursor"></span></div>';
+}
 
 // ── DOWNLOAD REPORT AS DOCX (server-side) ──
 async function downloadReport() {
