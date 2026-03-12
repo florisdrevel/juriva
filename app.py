@@ -14,7 +14,7 @@ from docx.oxml import OxmlElement
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-ADMIN-SECRET"
-client = Groq(api_key=os.environ.get("GROQ_API_KEY") or "your-groq-key-here")
+client = Groq(api_key=os.environ.get("GROQ_API_KEY") or "REDACTED-GROQ-KEY")
 
 # ─────────────────────────────────────────
 # ACCESS CODES — paste your valid_codes.txt block here
@@ -392,3 +392,4 @@ def download_report():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
