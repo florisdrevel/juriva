@@ -430,6 +430,7 @@ REGEL 2 — BEKNOPTHEID: Elk veld heeft een strikte woordlimiet. Overschrijd dez
 REGEL 3 — GEEN HERHALING: De SAMENVATTING herhaalt NOOIT wat al in TOP 3 RISICO'S staat. Nieuwe invalshoek of weglaten.
 
 REGEL 4 — OPMAAK: Gebruik EXACT de onderstaande structuur. Alleen ## voor hoofdsecties. Geen ###.
+REGEL 5 — GEEN EXTRA SECTIES: Voeg NOOIT secties toe buiten de onderstaande structuur. Geen 'Juridische Waarschuwing', geen 'Conclusie', geen 'Disclaimer'.
 
 ## RISICOSCORE
 SCORE:[1-10]
@@ -496,6 +497,7 @@ RULE 2 — BREVITY: Each field has a strict word limit. Do not exceed it.
 RULE 3 — NO REPETITION: The SUMMARY must NEVER repeat what is already in TOP 3 RISKS. New angle or omit.
 
 RULE 4 — FORMATTING: Use EXACTLY the structure below. Only ## for main sections. No ###.
+RULE 5 — NO EXTRA SECTIONS: NEVER add sections beyond the structure below. No 'Legal Warning', no 'Conclusion', no 'Disclaimer'.
 
 ## RISK SCORE
 SCORE:[1-10]
@@ -794,15 +796,18 @@ function formatAnalysisHTML(text) {
 
     // SCORE:7 — hide the raw token, already shown in card
     html = html.replace(/^SCORE:\s*\d{1,2}\s*/gm, '');
+    // Strip any extra sections the model adds beyond the template
+    html = html.replace(/^(?:JURIDISCHE WAARSCHUWING|LEGAL WARNING|DISCLAIMER)[\s\S]*$/gm, '');
 
     // Sub-item headers: RISICO 1:, RISK 1:, CLAUSULE 1:, CLAUSE 1:
     html = html.replace(/^((?:RISICO|RISK|CLAUSULE|CLAUSE)\s*\d+):\s*(.*)$/gm,
         '<h3>$1: $2</h3>');
 
-    // CITAAT: "text" or QUOTE: "text" → blockquote
+    // CITAAT: / QUOTE: → blockquote (with or without surrounding quotes)
     html = html.replace(/^(?:CITAAT|QUOTE):\s*&quot;(.*?)&quot;\s*$/gm, '<blockquote>$1</blockquote>');
     html = html.replace(/^(?:CITAAT|QUOTE):\s*"(.*?)"\s*$/gm, '<blockquote>$1</blockquote>');
-    // Multiline quotes starting with > 
+    html = html.replace(/^(?:CITAAT|QUOTE):\s*(.+)$/gm, '<blockquote>$1</blockquote>');
+    // > quoted lines
     html = html.replace(/^&gt;\s*(.+)$/gm, '<blockquote>$1</blockquote>');
 
     // Label lines → bold label
