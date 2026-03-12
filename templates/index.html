@@ -745,145 +745,97 @@ document.getElementById('secondDocInput').addEventListener('change', e => { if(e
 
 // ANALYSIS
 function extractScore(text) {
-    // Look for a standalone number after the risicoscore/risk score heading
-    const match = text.match(/(?:risicoscore|risk score)[^\n]*\n+\s*(\d{1,2})\b/i);
-    if (match) return match[1];
-    // Fallback: first number after the heading
-    const after = text.slice(text.search(/risk score|risicoscore/i));
-    const num = after.match(/\b(\d{1,2})\b/);
-    return num ? num[1] : '?';
+    // "RISICOSCORE\n7/10 — text" or "RISK SCORE\n7/10"
+    const m1 = text.match(/(?:risicoscore|risk score)[^\n]*\n+\s*(\d{1,2})\s*\/\s*10/i);
+    if (m1) return m1[1];
+    // Score on same line: "RISICOSCORE: 7/10"
+    const m2 = text.match(/(?:risicoscore|risk score)[^\n]*?(\d{1,2})\s*\/\s*10/i);
+    if (m2) return m2[1];
+    // Any X/10 in text
+    const m3 = text.match(/\b(\d{1,2})\s*\/\s*10\b/);
+    return m3 ? m3[1] : '?';
 }
+
 function countSection(text, ...keywords) {
-    const sections = text.split(/(?=##\s)/);
+    // Split only on --- boundaries (not on # which are sub-item dividers)
+    const sections = text.split(/\n---+\n/);
     for (const s of sections) {
         if (!keywords.some(k => s.toLowerCase().includes(k.toLowerCase()))) continue;
-        // Count entries by CITAAT/QUOTE blocks (unusual clauses) or numbered lines (actions)
-        const citaatCount = (s.match(/- (?:CITAAT|QUOTE):/gi) || []).length;
-        if (citaatCount > 0) return citaatCount;
-        const numberedCount = (s.match(/^\s*\d+\./gm) || []).length;
-        if (numberedCount > 0) return numberedCount;
-        // Fallback: count bullet lines
-        const bullets = (s.match(/^\s*[-•*]\s+\S/gm) || []).length;
+        // Count numbered top-level items: lines starting with "1." "2." etc.
+        const numbered = (s.match(/^\d+\.\s+\S/gm) || []).length;
+        if (numbered > 0) return numbered;
+        // Count CITAAT/QUOTE blocks
+        const citaat = (s.match(/^CITAAT:|^QUOTE:/gim) || []).length;
+        if (citaat > 0) return citaat;
+        // Count # sub-item headers as individual items
+        const hashes = (s.match(/^#\s*\n/gm) || []).length;
+        if (hashes > 0) return hashes;
+        // Fallback bullets
+        const bullets = (s.match(/^\s*[-•]\s+\S/gm) || []).length;
         return bullets > 0 ? bullets : '?';
     }
     return '?';
 }
+
+function formatAnalysisHTML(text) {
+    let html = text
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;');
+
+    // Section headings: ## or # all-caps lines
+    html = html.replace(/^#{1,2}\s+([A-Z\u00C0-\u024F\s\'\'\/&0-9:,\u2013-]{3,})\s*$/gm,
+        '</div><h2>$1</h2><div class="analysis-section-content">');
+
+    // --- dividers
+    html = html.replace(/^---+\s*$/gm, '</div><hr style="border:none;border-top:1px solid var(--border);margin:16px 0"><div class="analysis-section-content">');
+
+    // Blockquotes: > text
+    html = html.replace(/^&gt;\s*&quot;(.*?)&quot;\s*$/gm, '<blockquote>$1</blockquote>');
+    html = html.replace(/^&gt;\s*(.*?)\s*$/gm, '<blockquote>$1</blockquote>');
+
+    // CITAAT/QUOTE inline
+    html = html.replace(/- (?:CITAAT|QUOTE): &quot;(.*?)&quot;/gi, '<blockquote>$1</blockquote>');
+    html = html.replace(/(?:CITAAT|QUOTE):\s*&gt; (.*?)(?=<br>|$)/gi, '<blockquote>$1</blockquote>');
+
+    // Bold **text**
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+    // Label lines bold
+    html = html.replace(/^(MARKTSTANDAARD|AFWIJKING|IMPACT|ARTIKEL|RISICO|MARKET STANDARD|DEVIATION|ARTICLE|EXPLANATION|TOELICHTING):\s*/gm,
+        '<strong>$1:</strong> ');
+
+    html = html.replace(/\n/g, '<br>');
+    return html;
+}
+
+function renderStreaming(text) {
+    const body = document.getElementById('analysisBody');
+    // Update all three score cards live as content streams in
+    const score = extractScore(text);
+    if (score !== '?') document.getElementById('scoreVal').textContent = score;
+    const unusual = countSection(text, 'ongebruikelijke', 'unusual');
+    if (unusual !== '?') document.getElementById('unusualVal').textContent = unusual;
+    const actions = countSection(text, 'aanbevolen acties', 'recommended actions', 'aanbevolen');
+    if (actions !== '?') document.getElementById('actionsVal').textContent = actions;
+    const html = formatAnalysisHTML(text);
+    body.innerHTML = '<div class="analysis-section-content">' + html + '<span class="stream-cursor"></span></div>';
+}
+
 function renderAnalysis(text, filename) {
     lastAnalysis = text;
     lastFilename = filename || '';
     document.getElementById('scoreVal').textContent = extractScore(text);
     document.getElementById('unusualVal').textContent = countSection(text, 'ongebruikelijke', 'unusual');
-    document.getElementById('actionsVal').textContent = countSection(text, 'aanbevolen acties', 'recommended actions');
-    const sections = text.split(/##\s+/).filter(Boolean);
+    document.getElementById('actionsVal').textContent = countSection(text, 'aanbevolen acties', 'recommended actions', 'aanbevolen');
     const body = document.getElementById('analysisBody');
-    body.innerHTML = sections.map(section => {
-        const lines = section.split('\n');
-        const title = lines[0].trim();
-        const content = lines.slice(1).join('\n').trim()
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/- CITAAT: "(.*?)"/g, '<blockquote>$1</blockquote>')
-            .replace(/- QUOTE: "(.*?)"/g, '<blockquote>$1</blockquote>')
-            .replace(/\n/g, '<br>');
-        return `<h2>${title}</h2><div class="analysis-section-content">${content}</div>`;
-    }).join('');
+    const html = formatAnalysisHTML(text);
+    body.innerHTML = '<div class="analysis-section-content">' + html + '</div>';
     document.getElementById('results').style.display = 'block';
     document.getElementById('downloadRow').style.display = 'flex';
     setTimeout(() => document.getElementById('results-anchor').scrollIntoView({behavior:'smooth', block:'start'}), 100);
 }
 
-// ANALYSE BUTTON — streaming
-document.getElementById('analyseBtn').addEventListener('click', async () => {
-    const t = T[currentLang];
-    document.getElementById('status').style.display = 'block';
-    document.getElementById('results').style.display = 'none';
-    document.getElementById('downloadRow').style.display = 'none';
-    document.getElementById('error').style.display = 'none';
-    document.getElementById('analyseBtn').disabled = true;
-
-    const formData = new FormData();
-    formData.append('contract', selectedFile);
-    formData.append('prompt', t.prompt);
-    if (selectedPlaybook) formData.append('playbook', selectedPlaybook);
-    if (selectedSecondDoc) formData.append('second_document', selectedSecondDoc);
-
-    let fullText = '';
-    let streamStarted = false;
-
-    try {
-        const res = await fetch('/api/review', {method:'POST', body: formData});
-
-        if (!res.ok) {
-            // Non-streaming error response
-            const text = await res.text();
-            try { const j = JSON.parse(text); throw new Error(j.error || 'Server error'); }
-            catch(e) { throw new Error(e.message || 'Server error'); }
-        }
-
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop(); // keep incomplete line
-
-            for (const line of lines) {
-                if (!line.startsWith('data: ')) continue;
-                const payload = line.slice(6).trim();
-                if (payload === '[DONE]') break;
-
-                try {
-                    const chunk = JSON.parse(payload);
-                    if (chunk.error) throw new Error(chunk.error);
-                    if (chunk.token) {
-                        fullText += chunk.token;
-
-                        // Show results area on first token
-                        if (!streamStarted) {
-                            streamStarted = true;
-                            document.getElementById('status').style.display = 'none';
-                            document.getElementById('results').style.display = 'block';
-                            setTimeout(() => document.getElementById('results-anchor')
-                                .scrollIntoView({behavior:'smooth', block:'start'}), 100);
-                        }
-
-                        // Live-render as text streams in
-                        renderStreaming(fullText);
-                    }
-                } catch(e) {
-                    throw new Error(e.message);
-                }
-            }
-        }
-
-        // Final render with complete text
-        if (fullText) renderAnalysis(fullText, selectedFile ? selectedFile.name : '');
-
-    } catch(err) {
-        document.getElementById('status').style.display = 'none';
-        document.getElementById('error').textContent = t.errorPrefix + err.message;
-        document.getElementById('error').style.display = 'block';
-    } finally {
-        document.getElementById('analyseBtn').disabled = false;
-    }
-});
-
-// Live render while streaming — lightweight, no section parsing yet
-function renderStreaming(text) {
-    const body = document.getElementById('analysisBody');
-    const formatted = text
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/## (.+)/g, '</div><h2>$1</h2><div class="analysis-section-content">')
-        .replace(/- CITAAT: &quot;(.*?)&quot;/g, '<blockquote>$1</blockquote>')
-        .replace(/- QUOTE: &quot;(.*?)&quot;/g, '<blockquote>$1</blockquote>')
-        .replace(/\n/g, '<br>');
-    body.innerHTML = '<div class="analysis-section-content">' + formatted + '<span class="stream-cursor"></span></div>';
-}
 
 // ── DOWNLOAD REPORT AS DOCX (server-side) ──
 async function downloadReport() {
