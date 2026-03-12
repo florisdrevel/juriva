@@ -1,11 +1,16 @@
-from flask import Flask, request, jsonify, render_template, session
+from flask import Flask, request, jsonify, render_template, session, send_file
 from groq import Groq
 import pypdf
 import zipfile
 from xml.etree import ElementTree as ET
 import io
 import os
+import re
 from datetime import datetime, timedelta
+from docx import Document as DocxDocument
+from docx.shared import Pt, RGBColor, Inches
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-ADMIN-SECRET"
@@ -227,6 +232,155 @@ You do not hallucinate. If you are unsure, say so."""
 
     except Exception as e:
         purge_session_data()
+        return jsonify({'error': str(e)}), 500
+
+
+# ─────────────────────────────────────────
+# DOCX REPORT DOWNLOAD
+# ─────────────────────────────────────────
+def _add_border_bottom(para, color='C8B89A', size=4):
+    pPr = para._p.get_or_add_pPr()
+    pBdr = OxmlElement('w:pBdr')
+    b = OxmlElement('w:bottom')
+    b.set(qn('w:val'), 'single'); b.set(qn('w:sz'), str(size))
+    b.set(qn('w:space'), '4'); b.set(qn('w:color'), color)
+    pBdr.append(b); pPr.append(pBdr)
+
+def _add_border_left(para, color='C8B89A', size=8):
+    pPr = para._p.get_or_add_pPr()
+    pBdr = OxmlElement('w:pBdr')
+    l = OxmlElement('w:left')
+    l.set(qn('w:val'), 'single'); l.set(qn('w:sz'), str(size))
+    l.set(qn('w:space'), '8'); l.set(qn('w:color'), color)
+    pBdr.append(l); pPr.append(pBdr)
+
+def _add_runs(para, text, font='Arial', size=10, bold=False, italic=False, color=None):
+    color = color or RGBColor(0x3A, 0x34, 0x2C)
+    parts = re.split(r'\*\*(.*?)\*\*', text)
+    for i, part in enumerate(parts):
+        if not part: continue
+        r = para.add_run(part)
+        r.font.name = font; r.font.size = Pt(size)
+        r.font.bold = bold or (i % 2 == 1)
+        r.font.italic = italic; r.font.color.rgb = color
+
+def build_docx_report(analysis_text, lang='nl', contract_filename=''):
+    ACCENT = RGBColor(0xC8, 0xB8, 0x9A)
+    DARK   = RGBColor(0x1A, 0x18, 0x15)
+    BODY   = RGBColor(0x3A, 0x34, 0x2C)
+    MUTED  = RGBColor(0x8A, 0x7E, 0x70)
+    DIMMED = RGBColor(0xB0, 0xA4, 0x94)
+    QUOTE  = RGBColor(0x7A, 0x6C, 0x5A)
+
+    doc = DocxDocument()
+    for sec in doc.sections:
+        sec.top_margin = Inches(1); sec.bottom_margin = Inches(1)
+        sec.left_margin = Inches(1.2); sec.right_margin = Inches(1.2)
+    doc.styles['Normal'].font.name = 'Arial'
+    doc.styles['Normal'].font.size = Pt(10)
+
+    # Header
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(0); p.paragraph_format.space_after = Pt(2)
+    r = p.add_run('Juriva')
+    r.font.name = 'Georgia'; r.font.size = Pt(30); r.font.color.rgb = DARK
+
+    tagline = 'Een tweede paar ogen dat nooit moe wordt.' if lang == 'nl' else 'A second pair of eyes that never gets tired.'
+    p = doc.add_paragraph()
+    p.paragraph_format.space_after = Pt(16)
+    r = p.add_run(tagline)
+    r.font.name = 'Georgia'; r.font.size = Pt(10.5); r.font.italic = True; r.font.color.rgb = MUTED
+
+    p = doc.add_paragraph(); p.paragraph_format.space_after = Pt(14)
+    _add_border_bottom(p, 'C8B89A', 6)
+
+    # Meta
+    p = doc.add_paragraph(); p.paragraph_format.space_after = Pt(3)
+    label = 'CONTRACTANALYSE RAPPORT' if lang == 'nl' else 'CONTRACT ANALYSIS REPORT'
+    r = p.add_run(label + '   ')
+    r.font.name = 'Arial'; r.font.size = Pt(8); r.font.bold = True; r.font.color.rgb = ACCENT
+    r = p.add_run(datetime.now().strftime('%d %B %Y'))
+    r.font.name = 'Arial'; r.font.size = Pt(8); r.font.color.rgb = DIMMED
+
+    if contract_filename:
+        p = doc.add_paragraph(); p.paragraph_format.space_after = Pt(20)
+        lbl = 'Bestand: ' if lang == 'nl' else 'File: '
+        r = p.add_run(lbl); r.font.name = 'Arial'; r.font.size = Pt(8.5); r.font.color.rgb = DIMMED
+        r = p.add_run(contract_filename); r.font.name = 'Arial'; r.font.size = Pt(8.5); r.font.color.rgb = MUTED
+
+    # Sections
+    for section in [s for s in re.split(r'\n##\s+', '\n' + analysis_text.strip()) if s.strip()]:
+        lines = section.strip().split('\n')
+        h = doc.add_paragraph(); h.paragraph_format.space_before = Pt(18); h.paragraph_format.space_after = Pt(8)
+        _add_border_bottom(h, 'C8B89A', 4)
+        r = h.add_run(lines[0].strip().upper())
+        r.font.name = 'Arial'; r.font.size = Pt(8); r.font.bold = True; r.font.color.rgb = ACCENT
+
+        for line in lines[1:]:
+            line = line.strip()
+            if not line: continue
+            if re.match(r'^- (CITAAT|QUOTE):', line):
+                text = re.sub(r'^- (CITAAT|QUOTE):\s*"?', '', line).rstrip('"')
+                p = doc.add_paragraph()
+                p.paragraph_format.left_indent = Inches(0.3)
+                p.paragraph_format.space_before = Pt(6); p.paragraph_format.space_after = Pt(6)
+                _add_border_left(p, 'C8B89A', 8)
+                r = p.add_run('\u201c' + text + '\u201d')
+                r.font.name = 'Georgia'; r.font.size = Pt(9.5); r.font.italic = True; r.font.color.rgb = QUOTE
+            elif m := re.match(r'^- (ARTIKEL|RISICO|IMPACT|TOELICHTING|ARTICLE|RISK|EXPLANATION|IMPACT|MISSING):\s*(.*)', line):
+                p = doc.add_paragraph(); p.paragraph_format.left_indent = Inches(0.3)
+                p.paragraph_format.space_before = Pt(2); p.paragraph_format.space_after = Pt(2)
+                r = p.add_run(m.group(1) + ': ')
+                r.font.name = 'Arial'; r.font.size = Pt(9); r.font.bold = True; r.font.color.rgb = DARK
+                r = p.add_run(m.group(2)); r.font.name = 'Arial'; r.font.size = Pt(9.5); r.font.color.rgb = BODY
+            elif re.match(r'^\d+\.', line):
+                p = doc.add_paragraph(style='List Number')
+                p.paragraph_format.space_before = Pt(3); p.paragraph_format.space_after = Pt(3)
+                _add_runs(p, re.sub(r'^\d+\.\s*', '', line), color=BODY)
+            elif line.startswith('- '):
+                p = doc.add_paragraph(style='List Bullet')
+                p.paragraph_format.space_before = Pt(3); p.paragraph_format.space_after = Pt(3)
+                _add_runs(p, line[2:], color=BODY)
+            else:
+                p = doc.add_paragraph()
+                p.paragraph_format.space_before = Pt(3); p.paragraph_format.space_after = Pt(5)
+                _add_runs(p, line, color=BODY)
+
+    # Footer
+    p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(20); p.paragraph_format.space_after = Pt(8)
+    _add_border_bottom(p, 'C8B89A', 4)
+    disc = ('Dit rapport vormt geen juridisch advies. Altijd laten beoordelen door een bevoegde advocaat.'
+            if lang == 'nl' else
+            'This report does not constitute legal advice. Always have contracts reviewed by a qualified lawyer.')
+    p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(4)
+    r = p.add_run(disc); r.font.name = 'Arial'; r.font.size = Pt(7.5); r.font.italic = True; r.font.color.rgb = DIMMED
+    p = doc.add_paragraph()
+    r = p.add_run('juriva.nl  \u00b7  info.juriva@gmail.com')
+    r.font.name = 'Arial'; r.font.size = Pt(7.5); r.font.color.rgb = ACCENT
+
+    buf = io.BytesIO()
+    doc.save(buf); buf.seek(0)
+    return buf
+
+@app.route('/api/download-report', methods=['POST'])
+def download_report():
+    if not session.get('authenticated'):
+        return jsonify({'error': 'Geen toegang.'}), 401
+    if not session.get('terms_accepted'):
+        return jsonify({'error': 'terms_not_accepted'}), 403
+    try:
+        data = request.get_json()
+        analysis_text = data.get('analysis', '')
+        lang = data.get('lang', 'nl')
+        contract_filename = data.get('filename', '')
+        if not analysis_text:
+            return jsonify({'error': 'No analysis provided'}), 400
+        buf = build_docx_report(analysis_text, lang=lang, contract_filename=contract_filename)
+        safe = re.sub(r'[^a-zA-Z0-9_-]', '_', contract_filename.replace(' ', '_'))[:40] if contract_filename else 'rapport'
+        download_name = f"Juriva_{safe}_{datetime.now().strftime('%Y-%m-%d')}.docx"
+        return send_file(buf, as_attachment=True, download_name=download_name,
+                         mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
