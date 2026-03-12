@@ -15,11 +15,12 @@ from docx.oxml import OxmlElement
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-ADMIN-SECRET"
 
-_api_key = os.environ.get("ANTHROPIC_API_KEY")
-if not _api_key:
-    import sys
-    print("ERROR: ANTHROPIC_API_KEY environment variable is not set.", file=sys.stderr)
-client = anthropic.Anthropic(api_key=_api_key or "missing-key")
+# ─────────────────────────────────────────
+# PASTE YOUR ANTHROPIC API KEY HERE
+# ─────────────────────────────────────────
+ANTHROPIC_API_KEY = "REDACTED-ANTHROPIC-KEY"
+
+client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 # ─────────────────────────────────────────
 # ACCESS CODES — paste your valid_codes.txt block here
