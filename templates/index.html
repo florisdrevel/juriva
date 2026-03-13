@@ -244,6 +244,37 @@
         .footer-links a { font-size: 13.2px; color: rgba(240,237,232,0.5); text-decoration: none;
             letter-spacing: 0.04em; transition: color 0.2s; }
         .footer-links a:hover { color: var(--accent); }
+
+        /* ── MOBILE RESPONSIVE ── */
+        @media (max-width: 600px) {
+            body { font-size: 16px; }
+            .header { padding: 14px 16px; flex-wrap: wrap; gap: 8px; }
+            .logo { font-size: 36px; }
+            .tagline { font-size: 14.3px; }
+            .gate { padding: 32px 20px; }
+            .gate-logo { font-size: 40px; }
+            .gate-tagline { font-size: 15px; }
+            .app-inner { padding: 24px 16px 40px; max-width: 100%; }
+            .cards { gap: 10px; }
+            .card { padding: 16px 10px; min-width: 70px; flex: 1; }
+            .card-value { font-size: 40px; }
+            .card-label { font-size: 10px; }
+            .card-sub { font-size: 12px; }
+            .upload-zone { padding: 20px 14px; }
+            .upload-title { font-size: 17px; }
+            .upload-hint { font-size: 13px; }
+            .analyse-btn { font-size: 14.3px; padding: 14px 20px; width: 100%; }
+            .analysis-section-content { padding: 4px 14px 20px; font-size: 15px; line-height: 1.8; }
+            .analysis-body h2 { padding: 10px 14px; font-size: 11px; }
+            .terms-modal-inner { margin: 12px; }
+            .terms-header { padding: 20px 20px 14px; }
+            .terms-body { padding: 14px 20px; font-size: 14px; }
+            .footer { padding: 20px 16px; }
+            .limit-reached-box { padding: 20px 16px; margin: 0; }
+            .demo-banner { padding: 10px 16px; font-size: 12px; }
+            .privacy-badge { font-size: 11px; text-align: center; }
+            .status-text { font-size: 14px; }
+        }
     </style>
 <script>
 (function(){
@@ -256,7 +287,7 @@
 
 <!-- FIXED CONTROLS — always visible on every screen -->
 <div id="globalLangToggle" style="position:fixed; top:20px; right:24px; z-index:999; display:flex; align-items:center; gap:10px;">
-    <a href="/pricing" style="font-size:12px; color:var(--muted); text-decoration:none; letter-spacing:0.04em; padding:6px 10px; border:1px solid var(--border); border-radius:6px; transition:all 0.2s;" onmouseover="this.style.color='var(--accent)';this.style.borderColor='var(--accent)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">Abonnementen</a>
+    <a href="/pricing" style="font-size:12px; color:var(--muted); text-decoration:none; letter-spacing:0.04em; padding:6px 10px; border:1px solid var(--border); border-radius:6px; transition:all 0.2s;" onmouseover="this.style.color='var(--accent)';this.style.borderColor='var(--accent)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'" id="navPricing">Abonnementen</a>
     <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
     <div style="display:flex; align-items:center; gap:2px; background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:4px;">
         <button class="lang-btn active" id="btnNL" onclick="setLang('nl')">NL</button>
@@ -648,7 +679,7 @@ const T = {
         trialWarning:(d)=>`Nog ${d} dagen toegang \u2014 neem contact op via info.juriva@gmail.com`,
         termsTitle:'Gebruiksvoorwaarden', termsSubtitle:'Lees en accepteer de voorwaarden om Juriva te gebruiken',
         termsCheckboxLabel:'Ik heb de voorwaarden gelezen en ga akkoord', termsAcceptBtn:'Doorgaan',
-        tcToggleLabel:'Gebruiksvoorwaarden bekijken', tcToggleLabelClose:'Sluiten',
+        tcToggleLabel:'Gebruiksvoorwaarden bekijken', tcToggleLabelClose:'Sluiten', navPricing:'Abonnementen',
         footerCopy:'\u00a9 2026 Juriva \u2014 Alle rechten voorbehouden',
         prompt: NL_PROMPT
     },
@@ -673,7 +704,7 @@ const T = {
         trialWarning:(d)=>`${d} days remaining \u2014 contact us at info.juriva@gmail.com`,
         termsTitle:'Terms & Conditions', termsSubtitle:'Please read and accept the terms to use Juriva',
         termsCheckboxLabel:'I have read the terms and conditions and agree', termsAcceptBtn:'Continue',
-        tcToggleLabel:'View Terms & Conditions', tcToggleLabelClose:'Close',
+        tcToggleLabel:'View Terms & Conditions', tcToggleLabelClose:'Close', navPricing:'Plans',
         footerCopy:'\u00a9 2026 Juriva \u2014 All rights reserved',
         prompt: EN_PROMPT
     }
@@ -966,7 +997,7 @@ function setLang(lang) {
         secondDocTitle:'secondDocTitle', fileChange:'fileChange', btnText:'btnText',
         statusText:'statusText', labelRisk:'labelRisk', subRisk:'subRisk', labelUnusual:'labelUnusual',
         subUnusual:'subUnusual', labelActions:'labelActions', subActions:'subActions',
-        downloadBtnText:'downloadBtnText', termsTitle:'termsTitle', termsSubtitle:'termsSubtitle',
+        navPricing:'navPricing', downloadBtnText:'downloadBtnText', termsTitle:'termsTitle', termsSubtitle:'termsSubtitle',
         termsCheckboxLabel:'termsCheckboxLabel', termsAcceptBtn:'termsAcceptBtn', footerCopy:'footerCopy'
     };
     for (const [key, id] of Object.entries(ids)) document.getElementById(id).textContent = t[key];
