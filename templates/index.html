@@ -704,7 +704,12 @@ async function startDemo() {
     const app = document.getElementById('appWrapper');
     app.style.display = 'flex';
     document.getElementById('demoBanner').style.display = 'block';
-    // In demo mode: disable file inputs but enable analyse button (no file needed)
+    // Hide pro sections immediately in demo mode
+    var ps = document.getElementById('playbookSection');
+    var ss = document.getElementById('secondDocSection');
+    if (ps) ps.style.display = 'none';
+    if (ss) ss.style.display = 'none';
+    // In demo mode: disable file inputs
     var inputs = app.querySelectorAll('input[type="file"]');
     inputs.forEach(function(inp) { inp.disabled = true; });
     // Show a demo file placeholder in the upload area
