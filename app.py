@@ -27,7 +27,7 @@ from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-ADMIN-SECRET"
+app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-FLASK-SECRET"
 
 # ─────────────────────────────────────────────────────────────
 # CONFIGURATION — set via Railway environment variables
@@ -203,7 +203,6 @@ def extract_text_from_file(file):
 # ─────────────────────────────────────────
 def send_access_email(to_email: str, code: str, plan: str, lang: str = 'nl'):
     """Send access code email via Resend API."""
-    print(f"[EMAIL DEBUG] Key starts with: {RESEND_API_KEY[:8] if RESEND_API_KEY else 'EMPTY'}... len={len(RESEND_API_KEY)}", flush=True)
     if not RESEND_API_KEY:
         print(f"[EMAIL SKIP] No Resend API key. Code for {to_email}: {code}", flush=True)
         return False
@@ -1021,6 +1020,31 @@ def _handle_successful_payment(session_obj):
 @app.route('/success')
 def success():
     return render_template('success.html')
+
+
+@app.route('/admin/resend-email', methods=['POST'])
+def admin_resend_email():
+    """Manually resend access email for a session or email address."""
+    data = request.get_json() or {}
+    secret = data.get('secret', '')
+    if secret != os.environ.get('SECRET_KEY', ''):
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    email = data.get('email', '')
+    lang = data.get('lang', 'nl')
+
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT code, plan FROM codes WHERE email = ? ORDER BY created_at DESC LIMIT 1",
+            (email,)
+        ).fetchone()
+
+    if not row:
+        return jsonify({'error': f'No code found for {email}'}), 404
+
+    code, plan = row['code'], row['plan']
+    success = send_access_email(email, code, plan, lang)
+    return jsonify({'sent': success, 'code': code, 'plan': plan, 'to': email})
 
 
 if __name__ == '__main__':
