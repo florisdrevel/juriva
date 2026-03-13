@@ -704,6 +704,9 @@ async function startDemo() {
     const app = document.getElementById('appWrapper');
     app.style.display = 'flex';
     document.getElementById('demoBanner').style.display = 'block';
+    // Immediately disable file inputs in demo mode
+    var inputs = app.querySelectorAll('input[type="file"]');
+    inputs.forEach(function(inp) { inp.disabled = true; });
     renderFooterTC();
     setTimeout(runDemo, 400);
 }
@@ -756,7 +759,8 @@ async function runDemo() {
                     bodyEl.innerHTML = formatAnalysisHTML(fullText);
                     updateCards(fullText);
                     statusDiv.style.display = 'none';
-                    analyseBtn.disabled = false;
+                    analyseBtn.disabled = true;
+                    lockDemoUploads();
                     showDemoCTA();
                     document.getElementById('results-anchor').scrollIntoView({behavior:'smooth'});
                     return;
@@ -777,7 +781,34 @@ async function runDemo() {
         statusDiv.style.display = 'none';
         errorDiv.style.display = 'block';
         errorDiv.textContent = 'Demo kon niet worden geladen: ' + e.message;
-        analyseBtn.disabled = false;
+        if (!isDemoMode) analyseBtn.disabled = false;
+    }
+}
+
+function lockDemoUploads() {
+    // Hide upload inputs in demo mode — show a CTA instead
+    var uploadArea = document.getElementById('uploadArea');
+    var playbookArea = document.getElementById('playbookArea');
+    var secondDocArea = document.getElementById('secondDocArea');
+    var analyseBtn = document.getElementById('analyseBtn');
+    var counter = document.getElementById('analysesCounter');
+    var limitBox = document.getElementById('limitReachedBox');
+
+    if (uploadArea) uploadArea.style.pointerEvents = 'none';
+    if (playbookArea) playbookArea.style.pointerEvents = 'none';
+    if (secondDocArea) secondDocArea.style.pointerEvents = 'none';
+    if (counter) counter.style.display = 'none';
+
+    // Replace button with upgrade prompt
+    analyseBtn.style.display = 'none';
+    if (limitBox) {
+        limitBox.style.display = 'block';
+        var isNL = currentLang === 'nl';
+        document.getElementById('limitReachedTitle').textContent = isNL ? 'Dit was de demo' : 'This was the demo';
+        document.getElementById('limitReachedMsg').textContent = isNL
+            ? 'Analyseer uw eigen contracten met een toegangscode of abonnement.'
+            : 'Analyse your own contracts with an access code or subscription.';
+        document.getElementById('limitReachedBtn').textContent = isNL ? 'Bekijk abonnementen →' : 'View plans →';
     }
 }
 
