@@ -32,12 +32,6 @@ VALID_CODES = {
     "JURIVA-PILOT-3",
     "JURIVA-PILOT-4",
     "JURIVA-PILOT-5",
-    "JURIVA-PILOT-6",
-    "JURIVA-PILOT-7",
-    "JURIVA-PILOT-8",
-    "JURIVA-PILOT-9",
-    "JURIVA-PILOT-10",
-    "JURIVA-FAMILYSUPPORTERS-020",
     "JURIVA-DENTONS-001",  # amsterdam@dentons.com
     "JURIVA-HOUTHOFF-002",  # info@houthoff.com
     "JURIVA-LOYENSLOEFF-003",  # tom.van.helmond@loyensloeff.com
@@ -142,7 +136,7 @@ VALID_CODES = {
     "JURIVA-TRIPELSADVOC-102",  # info@tripels.nl
     "JURIVA-SEVERIJNHULS-103",  # info@severijn.nl
     "JURIVA-LAWMOREEINDH-104",  # info@law.nl
-    "JURIVA-LEXENCELITIG-105",
+    "JURIVA-LEXENCELITIG-105",  # info@lexence.nl
 }
 
 code_activations = {}
@@ -532,8 +526,261 @@ def download_report():
         return jsonify({'error': str(e)}), 500
 
 
+# ─────────────────────────────────────────
+# DEMO ROUTE — no auth required, preloaded NexusCloud contract
+# ─────────────────────────────────────────
+
+DEMO_CONTRACT = """
+NEXUSCLOUD PLATFORM SERVICES AGREEMENT
+Tussen: NexusCloud B.V. ("Leverancier") en Klant B.V. ("Klant")
+
+Artikel 1 – Definities
+1.1 "Platform" betekent de door Leverancier aangeboden SaaS-diensten.
+1.2 "Klantdata" betekent alle data die Klant uploadt of genereert via het Platform.
+1.3 "Beheerdata" betekent data die Leverancier naar eigen inzicht kwalificeert als operationeel relevant.
+
+Artikel 2 – Dienstverlening
+2.1 Leverancier verleent Klant een niet-exclusieve, niet-overdraagbare licentie tot gebruik van het Platform.
+2.2 Leverancier behoudt het recht functionaliteit te wijzigen zonder compensatie aan Klant.
+2.3 Leidende Partij bij interpretatie van deze overeenkomst is uitsluitend de Leverancier.
+
+Artikel 3 – Vergoeding
+3.1 Klant betaalt EUR 18.500 per maand.
+3.2 Klant heeft geen recht op ontbinding wegens prijswijziging.
+3.6 Leverancier past jaarlijks een "Annual Business Value Adjustment" toe van maximaal 25%, gebaseerd op de door Leverancier vastgestelde economische waarde die Klant aan het Platform ontleent. Deze aanpassing vereist geen nadere onderbouwing.
+
+Artikel 4 – Intellectueel Eigendom
+4.1 Alle Afgeleide Werken en analyses op basis van Klantdata worden eigendom van Leverancier.
+4.2 Klant verleent Leverancier een onherroepelijke, eeuwigdurende, wereldwijde, royaltyvrije, sublicentieerbare en overdraagbare licentie om de Klantdata te gebruiken voor (i) verbetering van het Platform; (ii) ontwikkeling van nieuwe producten en diensten; (iii) commerciële doeleinden inclusief doorverkoop van geaggregeerde datasets aan derden; en (iv) training van kunstmatige-intelligentiemodellen. Deze licentie blijft van kracht na beëindiging.
+4.5 Bedrijfsspecifieke inzichten gegenereerd uit Klantdata blijven eigendom van Leverancier.
+
+Artikel 5 – Gegevensverwerking
+5.2 Leverancier treedt op als verwerker doch behoudt het recht zelfstandig als verwerkingsverantwoordelijke op te treden voor Klantdata die Leverancier kwalificeert als Beheerdata. De kwalificatie van data als Beheerdata wordt uitsluitend door Leverancier bepaald.
+5.4 Na beëindiging vervalt het recht van Klant op toegang tot de Klantdata binnen 48 uur na de beëindigingsdatum. Leverancier is niet verplicht Klantdata te retourneren in een gestructureerd, veelgebruikt of machineleesbaar formaat. Klant heeft geen recht op een exportperiode tenzij Klant een aanvullende Data Retrieval Service afneemt voor EUR 12.500 per 30 dagen.
+
+Artikel 7 – Beëindiging
+7.2 Leverancier kan de overeenkomst beëindigen wegens (vi) strategische noodzaak, zonder nadere toelichting.
+7.4 Bij vroegtijdige beëindiging door Klant, ook bij toerekenbare tekortkoming van Leverancier, is Klant een vergoeding verschuldigd gelijk aan de resterende looptijd.
+
+Artikel 8 – Vertrouwelijkheid
+8.4 Klant erkent dat een schending van artikel 8.1 een onherstelbare schade voor Leverancier oplevert. Bij elke gestelde of dreigende schending kan Leverancier aanspraak maken op een contractuele boete van EUR 500.000 per incident.
+
+Artikel 9 – Aansprakelijkheid
+9.2 Leverancier geeft geen garanties met betrekking tot beschikbaarheid, juistheid of continuïteit van het Platform.
+
+Artikel 10 – Toepasselijk Recht
+10.1 Op deze overeenkomst is het recht van de staat Delaware (USA) van toepassing.
+10.3 Leverancier mag geschillen aanhangig maken bij elke bevoegde rechter wereldwijd. Klant is gebonden aan arbitrage in Wilmington, Delaware.
+
+Artikel 11 – Overige Bepalingen
+11.1 Leverancier kan de overeenkomst op elk moment eenzijdig wijzigen door Klant een kennisgeving te sturen met een termijn van 3 kalenderdagen. Voortgezet gebruik geldt als onherroepelijke aanvaarding.
+11.2 Klant is een retentievergoeding verschuldigd van 20% van de jaarlijkse vergoeding per jaar dat een Concurrerende Relatie voortduurt, naar het oordeel van Leverancier.
+11.3 Bij indienstneming van een medewerker van Leverancier is Klant een boete verschuldigd van EUR 250.000 per persoon.
+"""
+
+DEMO_SYSTEM_PROMPT = """You are a senior legal contract reviewer with 20 years of experience, writing for an audience of lawyers and legal professionals.
+
+Your readers already know the fundamentals of contract law. Never state the obvious.
+
+FILTER — SKIP ANYTHING THAT IS:
+- True of every contract
+- A general description of what a clause does without comparing it to market standard
+- Advice a first-year law student would give
+
+ONLY FLAG:
+- Clauses that deviate from Dutch/EU market standard for this specific contract type
+- Asymmetries that are unusual for this type of deal
+- Missing clauses specifically expected in this contract type
+- Concrete financial, operational or IP risks with real-world consequences
+
+SCORING CALIBRATION:
+1=Standard NDA. 3=Routine commercial. 5=Real exposure one area. 7=Serious risks multiple areas. 9=Existential clauses. 10=Predatory.
+Only assign 7+ if you can name TWO clauses each independently justifying it.
+
+CRITICAL: Stop immediately after the ONTBREKENDE STANDAARDCLAUSULES section. Do not add conclusions, warnings, disclaimers or any other content."""
+
+DEMO_PROMPT_NL = """Analyseer dit contract in het Nederlands. Gebruik exact dit formaat:
+
+## RISICOSCORE
+SCORE:[cijfer]
+[één zin samenvatting van de twee grootste risico's]
+
+---
+
+## TOP 3 RISICO'S
+
+RISICO 1: [titel, max 5 woorden]
+CITAAT: [max 20 woorden uit contract]
+ARTIKEL: [nummer]
+MARKTSTANDAARD: [max 12 woorden]
+AFWIJKING: [max 15 woorden]
+IMPACT: [max 15 woorden]
+
+RISICO 2: [titel, max 5 woorden]
+CITAAT: [max 20 woorden]
+ARTIKEL: [nummer]
+MARKTSTANDAARD: [max 12 woorden]
+AFWIJKING: [max 15 woorden]
+IMPACT: [max 15 woorden]
+
+RISICO 3: [titel, max 5 woorden]
+CITAAT: [max 20 woorden]
+ARTIKEL: [nummer]
+MARKTSTANDAARD: [max 12 woorden]
+AFWIJKING: [max 15 woorden]
+IMPACT: [max 15 woorden]
+
+---
+
+## SAMENVATTING
+[Max 3 punten. Elk max 15 woorden. NOOIT herhalen wat al in TOP 3 staat.]
+1. [aanvullende bevinding]
+2. [aanvullende bevinding]
+3. [aanvullende bevinding]
+
+---
+
+## ONGEBRUIKELIJKE CLAUSULES
+
+CLAUSULE 1: [titel, max 5 woorden]
+CITAAT: [max 15 woorden]
+ARTIKEL: [nummer]
+TOELICHTING: [max 15 woorden]
+
+CLAUSULE 2: [titel, max 5 woorden]
+CITAAT: [max 15 woorden]
+ARTIKEL: [nummer]
+TOELICHTING: [max 15 woorden]
+
+CLAUSULE 3: [titel, max 5 woorden]
+CITAAT: [max 15 woorden]
+ARTIKEL: [nummer]
+TOELICHTING: [max 15 woorden]
+
+---
+
+## AANBEVOLEN ACTIES
+[Max 5 acties. Elk max 15 woorden.]
+1. [actie]
+2. [actie]
+3. [actie]
+4. [actie]
+5. [actie]
+
+---
+
+## ONTBREKENDE STANDAARDCLAUSULES
+[Max 3 items. Elk max 20 woorden.]
+1. [ontbrekende clausule]
+2. [ontbrekende clausule]
+3. [ontbrekende clausule]"""
+
+DEMO_PROMPT_EN = """Analyse this contract in English. Use exactly this format:
+
+## RISK SCORE
+SCORE:[number]
+[one sentence summary of the two biggest risks]
+
+---
+
+## TOP 3 RISKS
+
+RISK 1: [title, max 5 words]
+QUOTE: [max 20 words from contract]
+ARTICLE: [number]
+MARKET STANDARD: [max 12 words]
+DEVIATION: [max 15 words]
+IMPACT: [max 15 words]
+
+RISK 2: [title, max 5 words]
+QUOTE: [max 20 words]
+ARTICLE: [number]
+MARKET STANDARD: [max 12 words]
+DEVIATION: [max 15 words]
+IMPACT: [max 15 words]
+
+RISK 3: [title, max 5 words]
+QUOTE: [max 20 words]
+ARTICLE: [number]
+MARKET STANDARD: [max 12 words]
+DEVIATION: [max 15 words]
+IMPACT: [max 15 words]
+
+---
+
+## SUMMARY
+[Max 3 points. Each max 15 words. NEVER repeat what is in TOP 3.]
+1. [additional finding]
+2. [additional finding]
+3. [additional finding]
+
+---
+
+## UNUSUAL CLAUSES
+
+CLAUSE 1: [title, max 5 words]
+QUOTE: [max 15 words]
+ARTICLE: [number]
+EXPLANATION: [max 15 words]
+
+CLAUSE 2: [title, max 5 words]
+QUOTE: [max 15 words]
+ARTICLE: [number]
+EXPLANATION: [max 15 words]
+
+CLAUSE 3: [title, max 5 words]
+QUOTE: [max 15 words]
+ARTICLE: [number]
+EXPLANATION: [max 15 words]
+
+---
+
+## RECOMMENDED ACTIONS
+[Max 5 actions. Each max 15 words.]
+1. [action]
+2. [action]
+3. [action]
+4. [action]
+5. [action]
+
+---
+
+## MISSING STANDARD CLAUSES
+[Max 3 items. Each max 20 words.]
+1. [missing clause]
+2. [missing clause]
+3. [missing clause]"""
+
+@app.route('/api/demo', methods=['POST'])
+def demo_analysis():
+    """Public demo endpoint — no auth required. Uses preloaded NexusCloud contract."""
+    data = request.get_json() or {}
+    lang = data.get('lang', 'nl')
+    prompt = DEMO_PROMPT_NL if lang == 'nl' else DEMO_PROMPT_EN
+
+    def generate():
+        try:
+            with client.messages.stream(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=4096,
+                temperature=0.1,
+                system=DEMO_SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": f"{prompt}\n\nCONTRACT TEXT:\n{DEMO_CONTRACT}"}]
+            ) as stream:
+                for text in stream.text_stream:
+                    yield f"data: {json.dumps({'token': text})}\n\n"
+            yield "data: [DONE]\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return app.response_class(generate(), mimetype='text/event-stream',
+        headers={'X-Accel-Buffering': 'no', 'Cache-Control': 'no-cache'})
+
+
+@app.route('/pricing')
+def pricing():
+    return render_template('pricing.html')
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
-
-
