@@ -11,7 +11,13 @@ import sqlite3
 import secrets
 import string
 import smtplib
-import stripe
+try:
+    import stripe
+    STRIPE_AVAILABLE = True
+except ImportError:
+    stripe = None
+    STRIPE_AVAILABLE = False
+    print("[STRIPE] stripe package not installed — payments disabled")
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
@@ -43,7 +49,7 @@ STRIPE_PRICES = {
     "kantoor_annual":      os.environ.get("STRIPE_PRICE_KANTOOR_ANNUAL", ""),
 }
 
-if STRIPE_SECRET_KEY:
+if STRIPE_SECRET_KEY and STRIPE_AVAILABLE:
     stripe.api_key = STRIPE_SECRET_KEY
 
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
@@ -53,7 +59,9 @@ TRIAL_DAYS = 14
 # ─────────────────────────────────────────────────────────────
 # SQLITE — persistent storage for codes & activations
 # ─────────────────────────────────────────────────────────────
-DB_PATH = os.environ.get("DB_PATH", "/app/juriva.db")
+# Use /tmp as fallback if /app isn't writable (safe for Railway)
+_default_db = "/app/juriva.db" if os.path.isdir("/app") else "/tmp/juriva.db"
+DB_PATH = os.environ.get("DB_PATH", _default_db)
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -101,11 +109,111 @@ def init_db():
             )
         # Seed existing firm outreach codes
         firm_codes = [
-            "JURIVA-DENTONS-001","JURIVA-CLIFFORDCHANCE-002","JURIVA-ALLENOVERY-003",
-            "JURIVA-FRESHFIELDS-004","JURIVA-HOUTHOFF-005","JURIVA-DEBRAUW-006",
-            "JURIVA-STIBBE-007","JURIVA-NautaDutilh-008","JURIVA-LOYENSLOEFF-009",
-            "JURIVA-AKDLAW-010","JURIVA-BOEKEL-011","JURIVA-PLOUMLAW-012",
-            "JURIVA-LEXENCECORP-013","JURIVA-LEXENCELITIG-014",
+     "JURIVA-DENTONS-001",  # amsterdam@dentons.com
+     "JURIVA-HOUTHOFF-002",  # info@houthoff.com
+     "JURIVA-LOYENSLOEFF-003",  # tom.van.helmond@loyensloeff.com
+     "JURIVA-DLAPIPER-004",  # lex.oosterling@dlapiper.com
+    "JURIVA-ACTLEGALNETH-005",  # terry.steffens@actlegal-netherlands.com
+    "JURIVA-AMICEADVOCAT-006",  # j.vanvliet@amice-advocaten.nl
+    "JURIVA-SIXLEGAL-007",  # info@sixlegal.nl
+    "JURIVA-ROSS-008",  # info@ross.nl
+    "JURIVA-CLIFFORDCHAN-009",  # markjan.arends@cliffordchance.com
+    "JURIVA-OSBORNECLARK-010",  # jeroen.bedaux@osborneclarke.com
+    "JURIVA-DANIELSHUISM-011",  # bleker@danielshuisman.nl
+    "JURIVA-PELSRIJCKEN-012",  # abdessamad.elallaoui@pelsrijcken.nl
+    "JURIVA-RECOUP-013",  # info@recoup.nl
+    "JURIVA-BRINKHOF-014",  # info@brinkhof.com
+    "JURIVA-NAUTADUTILH-015",  # jaco.belder@nautadutilh.com
+    "JURIVA-FLORENT-016",  # kees.vandemeent@florent.nl
+    "JURIVA-LEEWAY-017",  # marga.verwoert@leeway.nl
+    "JURIVA-DELOITTE-018",  # fgrapperhaus@deloitte.nl
+    "JURIVA-LVHADVOCATEN-019",  # info@lvh-advocaten.nl
+    "JURIVA-LAWANDMORE-020",  # info@lawandmore.nl
+    "JURIVA-RUSSELL-021",  # reinier.russell@russell.nl
+    "JURIVA-VANDERMEIJAD-022",  # michielhoppenbrouwers@vandermeijadvocaten.nl
+    "JURIVA-PRINSENKOSTE-023",  # mr.prins@prinsenkosteradvocaten.nl
+    "JURIVA-MULTIWEB-024",  # vdheiden@multiweb.nl
+    "JURIVA-ADVOCATENKAN-025",  # neervoort@advocatenkantoorneervoort.nl
+    "JURIVA-KNUWERALKMAA-026",  # info@knuweralkmaar.nl
+    "JURIVA-KNUWERDENHEL-027",  # info@knuwerdenhelder.nl
+    "JURIVA-SPUISTRAAT10-028",  # info@spuistraat10.nl
+    "JURIVA-MEIJERSCANAT-029",  # info@meijerscanatan.nl
+    "JURIVA-DEBREIJ-030",  # info@debreij.nl
+    "JURIVA-LEXENCE-031",  # info@lexence.com
+    "JURIVA-STEK-032",  # info@stek.com
+    "JURIVA-VANDOORNE-033",  # info@vandoorne.com
+    "JURIVA-FLORENT-034",  # info@florent.nl
+    "JURIVA-JBLAW-035",  # info@jblaw.nl
+    "JURIVA-VRIMANMALAWY-036",  # info@vriman.nl
+    "JURIVA-VANCAMPENLIE-037",  # info@vancampenliem.com
+    "JURIVA-PLOUM-038",  # info@ploum.nl
+    "JURIVA-ACTLEGALNETH-039",  # info@act.nl
+    "JURIVA-AKD-040",  # info@akd.nl
+    "JURIVA-BANNING-041",  # info@banning.nl
+    "JURIVA-BARENTSKRANS-042",  # info@barentskrans.nl
+    "JURIVA-BIRDBIRD-043",  # info@bird.nl
+    "JURIVA-BOELSZANDERS-044",  # info@boels.nl
+    "JURIVA-BONDADVOCATE-045",  # info@bond.nl
+    "JURIVA-BRINKHOF-046",  # info@brinkhof.nl
+    "JURIVA-BRONSGEESTDE-047",  # info@bronsgeest.nl
+    "JURIVA-BUREAUBRANDE-048",  # info@bureau.nl
+    "JURIVA-BUREN-049",  # info@buren.nl
+    "JURIVA-CMS-050",  # info@cms.nl
+    "JURIVA-DAVIDSADVOCA-051",  # info@davids.nl
+    "JURIVA-DECLERCQADVO-052",  # info@de.nl
+    "JURIVA-DIRKZWAGERLE-053",  # info@dirkzwager.nl
+    "JURIVA-DUETADVOCATE-054",  # info@duet.nl
+    "JURIVA-DVANADVOCATE-055",  # info@dvan.nl
+    "JURIVA-DVDWADVOCATE-056",  # info@dvdw.nl
+    "JURIVA-EVERSSOERJAT-057",  # info@evers.nl
+    "JURIVA-FINCHDISPUTE-058",  # info@finch.nl
+    "JURIVA-FIZADVOCATEN-059",  # info@fiz.nl
+    "JURIVA-GREENBERGTRA-060",  # info@greenberg.nl
+    "JURIVA-HOLLA-061",  # info@holla.nl
+    "JURIVA-HEKKELMAN-062",  # info@hekkelman.nl
+    "JURIVA-HVGLAW-063",  # info@hvg.nl
+    "JURIVA-JAHAERAYMAKE-064",  # info@jahaeraymakers.nl
+    "JURIVA-JEBBINKSOETE-065",  # info@jebbink.nl
+    "JURIVA-KENNEDYVANDE-066",  # info@kennedy.nl
+    "JURIVA-KIENHUISHOVI-067",  # info@kienhuishoving.nl
+    "JURIVA-KIENHUISLEGA-068",  # info@kienhuis.nl
+    "JURIVA-KPMGLAWNETHE-069",  # info@kpmg.nl
+    "JURIVA-LAGRO-070",  # info@la.nl
+    "JURIVA-LXAATTORNEYS-071",  # info@lxa.nl
+    "JURIVA-MAVERICKADVO-072",  # info@maverick.nl
+    "JURIVA-NEWGROUNDLAW-073",  # info@newground.nl
+    "JURIVA-PELSRIJCKEN-074",  # info@pels.nl
+    "JURIVA-QUINZNETHERL-075",  # info@quinz.nl
+    "JURIVA-SCHAAPADVOCA-076",  # info@schaap.nl
+    "JURIVA-SEEGERSLEBKO-077",  # info@seegers.nl
+    "JURIVA-SIMMONSSIMMO-078",  # info@simmons.nl
+    "JURIVA-SQUIREPATTON-079",  # info@squire.nl
+    "JURIVA-STIBBENETHER-080",  # info@stibbe.nl
+    "JURIVA-TENHOLTERNOO-081",  # info@ten.nl
+    "JURIVA-TRIPADVOCATE-082",  # info@trip.nl
+    "JURIVA-VANBENTHEMKE-083",  # info@van.nl
+    "JURIVA-VESTIUSADVOC-084",  # info@vestius.nl
+    "JURIVA-VISSERSCHAAP-085",  # info@visser.nl
+    "JURIVA-WIJNSTAEL-086",  # info@wijn.nl
+    "JURIVA-WINDTLEGRAND-087",  # info@windt.nl
+    "JURIVA-WINTERTALING-088",  # info@wintertaling.nl
+    "JURIVA-WLADIMIROFFA-089",  # info@wladimiroff.nl
+    "JURIVA-YOURCORPORAT-090",  # info@your.nl
+    "JURIVA-ALLENOVERYNE-091",  # info@allen.nl
+    "JURIVA-BAKERMCKENZI-092",  # info@baker.nl
+    "JURIVA-CLIFFORDCHAN-093",  # info@clifford.nl
+    "JURIVA-DLAPIPERNETH-094",  # info@dla.nl
+    "JURIVA-DENTONSNETHE-095",  # info@dentons.nl
+    "JURIVA-JONESDAYAMST-096",  # info@jones.nl
+    "JURIVA-LINKLATERSAM-097",  # info@linklaters.nl
+    "JURIVA-LOYENSLOEFF-098",  # info@loyens.nl
+    "JURIVA-NAUTADUTILH-099",  # info@nautadutilh.nl
+    "JURIVA-HABRAKENRUTT-100",  # info@habrakenrutten.nl
+    "JURIVA-LAWTONLAWYER-101",  # info@lawton.nl
+    "JURIVA-TRIPELSADVOC-102",  # info@tripels.nl
+    "JURIVA-SEVERIJNHULS-103",  # info@severijn.nl
+    "JURIVA-LAWMOREEINDH-104",  # info@law.nl
+    "JURIVA-LEXENCELITIG-105",  # info@lexence.nl",
         ]
         for i, code in enumerate(firm_codes):
             conn.execute(
@@ -114,7 +222,11 @@ def init_db():
             )
         conn.commit()
 
-init_db()
+try:
+    init_db()
+    print(f"[DB] Initialised at {DB_PATH}")
+except Exception as e:
+    print(f"[DB ERROR] Could not init DB: {e}")
 
 # ─────────────────────────────────────────────────────────────
 # CODE HELPERS
@@ -866,7 +978,7 @@ PLAN_NAMES = {
 
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
-    if not STRIPE_SECRET_KEY:
+    if not STRIPE_SECRET_KEY or not STRIPE_AVAILABLE:
         return jsonify({'error': 'Payments not configured yet'}), 503
     data = request.get_json() or {}
     plan_key = data.get('plan', '')
