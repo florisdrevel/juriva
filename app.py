@@ -203,6 +203,7 @@ def extract_text_from_file(file):
 # ─────────────────────────────────────────
 def send_access_email(to_email: str, code: str, plan: str, lang: str = 'nl'):
     """Send access code email via Resend API."""
+    print(f"[EMAIL DEBUG] Key starts with: {RESEND_API_KEY[:8] if RESEND_API_KEY else 'EMPTY'}... len={len(RESEND_API_KEY)}", flush=True)
     if not RESEND_API_KEY:
         print(f"[EMAIL SKIP] No Resend API key. Code for {to_email}: {code}", flush=True)
         return False
