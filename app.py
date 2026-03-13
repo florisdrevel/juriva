@@ -27,7 +27,7 @@ from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-FLASK-SECRET"
+app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-ADMIN-SECRET"
 
 # ─────────────────────────────────────────────────────────────
 # CONFIGURATION — set via Railway environment variables
@@ -1045,6 +1045,36 @@ def admin_resend_email():
     code, plan = row['code'], row['plan']
     success = send_access_email(email, code, plan, lang)
     return jsonify({'sent': success, 'code': code, 'plan': plan, 'to': email})
+
+
+@app.route('/admin/resend/<secret>/<email>')
+def admin_resend_get(secret, email):
+    """Browser-accessible resend endpoint."""
+    if secret != (os.environ.get('SECRET_KEY') or 'REDACTED-ADMIN-SECRET'):
+        return "Unauthorized", 401
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT code, plan FROM codes WHERE email = ? ORDER BY created_at DESC LIMIT 1",
+            (email,)
+        ).fetchone()
+    if not row:
+        return f"No code found for {email}", 404
+    code, plan = row['code'], row['plan']
+    success = send_access_email(email, code, plan, 'nl')
+    if success:
+        return f"<h2>✓ Email sent!</h2><p>Code <strong>{code}</strong> sent to {email}</p>"
+    else:
+        return f"<h2>✗ Email failed</h2><p>Check Railway logs for details.</p>", 500
+
+@app.route('/admin/clear-session/<secret>/<session_id>')
+def admin_clear_session(secret, session_id):
+    """Clear a processed session so webhook can reprocess it."""
+    if secret != (os.environ.get('SECRET_KEY') or 'REDACTED-ADMIN-SECRET'):
+        return "Unauthorized", 401
+    with get_db() as conn:
+        conn.execute("DELETE FROM payments WHERE stripe_session_id = ?", (session_id,))
+        conn.commit()
+    return f"<h2>✓ Session cleared</h2><p>Resend the webhook from Stripe now.</p>"
 
 
 if __name__ == '__main__':
