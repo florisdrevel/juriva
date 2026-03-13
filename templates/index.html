@@ -248,7 +248,8 @@
 <body>
 
 <!-- FIXED CONTROLS — always visible on every screen -->
-<div id="globalLangToggle" style="position:fixed; top:20px; right:24px; z-index:999; display:flex; align-items:center; gap:6px;">
+<div id="globalLangToggle" style="position:fixed; top:20px; right:24px; z-index:999; display:flex; align-items:center; gap:10px;">
+    <a href="/pricing" style="font-size:12px; color:var(--muted); text-decoration:none; letter-spacing:0.04em; padding:6px 10px; border:1px solid var(--border); border-radius:6px; transition:all 0.2s;" onmouseover="this.style.color='var(--accent)';this.style.borderColor='var(--accent)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">Abonnementen</a>
     <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
     <div style="display:flex; align-items:center; gap:2px; background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:4px;">
         <button class="lang-btn active" id="btnNL" onclick="setLang('nl')">NL</button>
@@ -279,7 +280,7 @@
             <button class="gate-btn" id="codeBtn" onclick="submitCode()">Toegang</button>
         </div>
         <div class="gate-error" id="gateError"></div>
-        <div class="gate-contact" id="gateContact">Geen toegangscode? Vraag een gratis pilot aan.<br><a href="mailto:info.juriva@gmail.com">info.juriva@gmail.com</a></div>
+        <div class="gate-contact" id="gateContact">Geen toegangscode? Vraag een gratis pilot aan.<br><a href="/cdn-cgi/l/email-protection#244d4a424b0a4e51564d5245644349454d480a474b49"><span class="__cf_email__" data-cfemail="8ce5e2eae3a2e6f9fee5faedccebe1ede5e0a2efe3e1">[email&#160;protected]</span></a></div>
     </div>
 </div>
 
@@ -320,7 +321,7 @@
         <div id="demoBanner" class="demo-banner" style="display:none;">
             🔍 <strong>Live demo</strong> — dit is een voorbeeldcontract (NexusCloud PSA, risicoscore 9/10).
             Wil je je eigen contract analyseren?
-            <a href="mailto:info.juriva@gmail.com?subject=Toegangscode aanvragen">Vraag een gratis 14-daagse toegangscode aan →</a>
+            <a href="/cdn-cgi/l/email-protection#81e8efe7eeafebf4f3e8f7e0c1e6ece0e8edafe2eeecbef2f4e3ebe4e2f5bcd5eee4e6e0efe6f2e2eee5e4a1e0e0eff7f3e0e6e4ef">Vraag een gratis 14-daagse toegangscode aan →</a>
         </div>
 
         <div class="upload-section">
@@ -434,12 +435,12 @@
         <div class="footer-tc-content" id="footerTCContent"></div>
         <div class="footer-bottom">
             <div class="footer-copy" id="footerCopy">&copy; 2026 Juriva &mdash; Alle rechten voorbehouden</div>
-            <div class="footer-links"><a href="mailto:info.juriva@gmail.com">info.juriva@gmail.com</a></div>
+            <div class="footer-links"><a href="/cdn-cgi/l/email-protection#f0999e969fde9a8582998691b0979d91999cde939f9d"><span class="__cf_email__" data-cfemail="422b2c242d6c2837302b342302252f232b2e6c212d2f">[email&#160;protected]</span></a></div>
         </div>
     </footer>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 let selectedFile = null, selectedPlaybook = null, selectedSecondDoc = null;
 let currentLang = 'nl', termsAccepted = false, tcOpen = false;
 let lastAnalysis = '', lastFilename = '';
@@ -676,38 +677,44 @@ let isDemoMode = false;
 
 async function startDemo() {
     isDemoMode = true;
-    // Skip auth — go straight to app, show demo banner
     document.getElementById('gate').style.display = 'none';
     document.getElementById('termsModal').classList.remove('visible');
     const app = document.getElementById('appWrapper');
     app.style.display = 'flex';
     document.getElementById('demoBanner').style.display = 'block';
     renderFooterTC();
-    // Auto-run the demo analysis after a short delay
     setTimeout(runDemo, 400);
 }
 
 async function runDemo() {
-    const btn = document.getElementById('analyzeBtn');
-    const statusEl = document.getElementById('statusText');
-    const resultEl = document.getElementById('resultSection');
-    const t = T[currentLang];
+    const analyseBtn = document.getElementById('analyseBtn');
+    const statusEl   = document.getElementById('statusText');
+    const statusDiv  = document.getElementById('status');
+    const resultsDiv = document.getElementById('results');
+    const errorDiv   = document.getElementById('error');
+    const downloadRow= document.getElementById('downloadRow');
+    const bodyEl     = document.getElementById('analysisBody');
 
-    btn.disabled = true;
-    statusEl.textContent = currentLang === 'nl' ? 'Demo wordt geladen...' : 'Loading demo...';
-    resultEl.style.display = 'none';
-    document.getElementById('analysisOutput').innerHTML = '';
+    // Reset UI
+    analyseBtn.disabled = true;
+    statusDiv.style.display = 'block';
+    resultsDiv.style.display = 'none';
+    downloadRow.style.display = 'none';
+    errorDiv.style.display = 'none';
+    bodyEl.innerHTML = '';
     resetCards();
+    statusEl.textContent = currentLang === 'nl' ? 'Demo wordt geladen...' : 'Loading demo...';
 
     try {
-        const res = await fetch('/api/demo', { method: 'POST',
+        const res = await fetch('/api/demo', {
+            method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({lang: currentLang})
         });
 
-        if (!res.ok) { throw new Error('Demo failed'); }
+        if (!res.ok) throw new Error('Demo failed — status ' + res.status);
 
-        resultEl.style.display = 'block';
+        resultsDiv.style.display = 'block';
         statusEl.textContent = currentLang === 'nl' ? 'Analyseren...' : 'Analysing...';
 
         const reader = res.body.getReader();
@@ -724,29 +731,35 @@ async function runDemo() {
                 if (!line.startsWith('data: ')) continue;
                 const payload = line.slice(6).trim();
                 if (payload === '[DONE]') {
-                    document.getElementById('analysisOutput').innerHTML = formatAnalysisHTML(fullText);
+                    bodyEl.innerHTML = formatAnalysisHTML(fullText);
                     updateCards(fullText);
-                    statusEl.textContent = currentLang === 'nl' ? 'Demo analyse voltooid' : 'Demo analysis complete';
-                    btn.disabled = false;
-                    // Show upgrade CTA after demo completes
+                    statusDiv.style.display = 'none';
+                    analyseBtn.disabled = false;
                     showDemoCTA();
+                    document.getElementById('results-anchor').scrollIntoView({behavior:'smooth'});
                     return;
                 }
                 try {
                     const d = JSON.parse(payload);
-                    if (d.token) { fullText += d.token; renderStreaming(fullText); }
+                    if (d.token) {
+                        fullText += d.token;
+                        bodyEl.innerHTML = formatAnalysisHTML(fullText) +
+                            '<span class="stream-cursor">▋</span>';
+                        updateCards(fullText);
+                    }
                     if (d.error) throw new Error(d.error);
-                } catch(e) {}
+                } catch(e) { if (e.message !== 'Unexpected end of JSON input') throw e; }
             }
         }
     } catch(e) {
-        statusEl.textContent = 'Demo kon niet worden geladen.';
-        btn.disabled = false;
+        statusDiv.style.display = 'none';
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = 'Demo kon niet worden geladen: ' + e.message;
+        analyseBtn.disabled = false;
     }
 }
 
 function showDemoCTA() {
-    // Replace demo banner with stronger CTA after analysis
     const banner = document.getElementById('demoBanner');
     banner.innerHTML = `
         ✅ <strong>Demo voltooid.</strong> Dit is wat Juriva doet met <em>elk</em> contract in 30 seconden.<br>
@@ -1097,18 +1110,4 @@ async function downloadReport() {
         const a = document.createElement('a');
         const safe = (lastFilename || 'rapport').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
         a.href = url;
-        a.download = 'Juriva_' + safe + '_' + new Date().toISOString().slice(0, 10) + '.docx';
-        document.body.appendChild(a); a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch(err) {
-        console.error(err);
-        alert(currentLang === 'nl' ? 'Download mislukt: ' + err.message : 'Download failed: ' + err.message);
-    } finally {
-        btn.disabled = false;
-        span.textContent = origText;
-    }
-}
-</script>
-</body>
-</html>
+        a.download = 'Juriva_' + safe + '_' + new Da
