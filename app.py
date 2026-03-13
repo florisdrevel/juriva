@@ -972,12 +972,12 @@ def pricing():
 
 PLAN_NAMES = {
     "per_analyse_monthly": "Per Analyse",
-    "zzp_monthly":         "ZZP Plan (maandelijks)",
-    "zzp_annual":          "ZZP Plan (jaarlijks)",
-    "pro_monthly":         "Professioneel (maandelijks)",
-    "pro_annual":          "Professioneel (jaarlijks)",
-    "kantoor_monthly":     "Kantoor (maandelijks)",
-    "kantoor_annual":      "Kantoor (jaarlijks)",
+    "zzp_monthly":         "ZZP",
+    "zzp_annual":          "ZZP",
+    "pro_monthly":         "Professioneel",
+    "pro_annual":          "Professioneel",
+    "kantoor_monthly":     "Kantoor",
+    "kantoor_annual":      "Kantoor",
 }
 
 @app.route('/create-checkout-session', methods=['POST'])
@@ -1221,6 +1221,17 @@ def admin_insert_code(secret, code, plan):
         )
         conn.commit()
     return f"<h2>✓ Code inserted</h2><p>Code: <strong>{code}</strong><br>Plan: <strong>{plan}</strong></p>"
+
+
+@app.route('/admin/clear-test-codes/<secret>')
+def admin_clear_test_codes(secret):
+    """Delete all test codes (email = test@juriva.nl)."""
+    if secret != (os.environ.get('SECRET_KEY') or 'REDACTED-ADMIN-SECRET'):
+        return "Unauthorized", 401
+    with get_db() as conn:
+        conn.execute("DELETE FROM codes WHERE email = 'test@juriva.nl'")
+        conn.commit()
+    return "<h2>✓ All test codes cleared</h2>"
 
 
 if __name__ == '__main__':
