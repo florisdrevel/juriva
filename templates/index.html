@@ -685,6 +685,8 @@ window.addEventListener('load', async () => {
     const data = await res.json();
     if (data.authenticated) {
         termsAccepted = data.terms_accepted;
+        window._jurivaPlan = data.plan || window._jurivaPlan || 'pilot';
+        window._jurivaAnalysesRemaining = (data.analyses_remaining !== undefined) ? data.analyses_remaining : (window._jurivaAnalysesRemaining || 999);
         if (termsAccepted) showApp(data.days_remaining);
         else showTerms(data.days_remaining);
     }
@@ -803,6 +805,8 @@ async function submitCode() {
     });
     const data = await res.json();
     if (data.success) {
+        window._jurivaPlan = data.plan || 'pilot';
+        window._jurivaAnalysesRemaining = (data.analyses_remaining !== undefined) ? data.analyses_remaining : 999;
         showTerms(data.days_remaining);
     } else {
         errEl.textContent = data.error === 'expired' ? t.gateErrorExpired : t.gateErrorInvalid;
@@ -841,6 +845,40 @@ function showApp(days) {
         tl.style.color = 'rgba(224,85,85,0.8)';
     }
     renderFooterTC();
+    updateAnalysesCounter();
+}
+
+function updateAnalysesCounter() {
+    var plan = window._jurivaPlan || 'pilot';
+    var remaining = window._jurivaAnalysesRemaining;
+    var counter = document.getElementById('analysesCounter');
+    var limitBox = document.getElementById('limitReachedBox');
+    var btn = document.getElementById('analyseBtn');
+    var isNL = currentLang === 'nl';
+
+    if (plan === 'Per Analyse') {
+        if (remaining <= 0) {
+            // Used up — show limit box, hide counter, disable button
+            counter.style.display = 'none';
+            limitBox.style.display = 'block';
+            document.getElementById('limitReachedTitle').textContent = isNL ? 'Analyse gebruikt' : 'Analysis used';
+            document.getElementById('limitReachedMsg').textContent = isNL
+                ? 'U heeft uw analyse gebruikt. Koop een nieuwe analyse of upgrade naar een abonnement.'
+                : 'You have used your analysis. Buy a new one or upgrade to a subscription.';
+            document.getElementById('limitReachedBtn').textContent = isNL ? 'Bekijk abonnementen →' : 'View plans →';
+            btn.disabled = true;
+        } else {
+            // Still has 1 remaining — show counter
+            counter.style.display = 'block';
+            counter.innerHTML = isNL
+                ? '<span style="color:var(--accent);font-weight:600">' + remaining + '</span> analyse beschikbaar'
+                : '<span style="color:var(--accent);font-weight:600">' + remaining + '</span> analysis available';
+            limitBox.style.display = 'none';
+        }
+    } else {
+        counter.style.display = 'none';
+        limitBox.style.display = 'none';
+    }
 }
 
 // FOOTER T&C
@@ -1054,8 +1092,20 @@ document.getElementById('analyseBtn').addEventListener('click', async () => {
 
         if (!res.ok) {
             const text = await res.text();
-            try { const j = JSON.parse(text); throw new Error(j.error || 'Server error'); }
-            catch(e) { throw new Error(e.message || 'Server error'); }
+            try {
+                const j = JSON.parse(text);
+                if (j.error === 'limit_reached') {
+                    // Show limit box and decrement counter
+                    window._jurivaAnalysesRemaining = 0;
+                    updateAnalysesCounter();
+                    document.getElementById('status').style.display = 'none';
+                    return;
+                }
+                if (j.error === 'upgrade_required') {
+                    throw new Error((currentLang === 'nl' ? 'Upgrade vereist: ' : 'Upgrade required: ') + (j.message || ''));
+                }
+                throw new Error(j.error || 'Server error');
+            } catch(e) { throw new Error(e.message || 'Server error'); }
         }
 
         const reader = res.body.getReader();
@@ -1097,7 +1147,14 @@ document.getElementById('analyseBtn').addEventListener('click', async () => {
             }
         }
 
-        if (fullText) renderAnalysis(fullText, selectedFile ? selectedFile.name : '');
+        if (fullText) {
+            renderAnalysis(fullText, selectedFile ? selectedFile.name : '');
+            // Decrement counter after successful analysis
+            if (window._jurivaPlan === 'Per Analyse' && window._jurivaAnalysesRemaining > 0) {
+                window._jurivaAnalysesRemaining--;
+                updateAnalysesCounter();
+            }
+        }
 
     } catch(err) {
         document.getElementById('status').style.display = 'none';
