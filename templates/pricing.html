@@ -438,21 +438,31 @@ function setLang(lang) {
 
 // ── STRIPE CHECKOUT ──
 function startCheckout(planKey) {
+    // Show loading state on button
+    var btns = document.querySelectorAll('.plan-btn');
+    btns.forEach(function(b) { b.disabled = true; b.style.opacity = '0.6'; });
+
     fetch('/create-checkout-session', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({plan: planKey, lang: currentLang})
     })
-    .then(function(res) { return res.json(); })
+    .then(function(res) {
+        if (!res.ok) {
+            return res.json().then(function(d) { throw new Error(d.error || 'Server error ' + res.status); });
+        }
+        return res.json();
+    })
     .then(function(data) {
         if (data.url) {
             window.location.href = data.url;
         } else {
-            window.location.href = 'mailto:info.juriva@gmail.com';
+            throw new Error(data.error || 'No checkout URL returned');
         }
     })
-    .catch(function() {
-        window.location.href = 'mailto:info.juriva@gmail.com';
+    .catch(function(err) {
+        btns.forEach(function(b) { b.disabled = false; b.style.opacity = '1'; });
+        alert('Betaling kon niet worden gestart: ' + err.message + '\n\nNeem contact op via info.juriva@gmail.com');
     });
 }
 
