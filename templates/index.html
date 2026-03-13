@@ -723,6 +723,15 @@ async function startDemo() {
     runDemo();
 }
 
+function updateCards(text) {
+    var score = extractScore(text);
+    var unusual = countSection(text, 'ongebruikelijke', 'unusual');
+    var actions = countSection(text, 'aanbevolen acties', 'recommended actions', 'aanbevolen');
+    if (score !== '?') document.getElementById('scoreVal').textContent = score;
+    if (unusual !== '?') document.getElementById('unusualVal').textContent = unusual;
+    if (actions !== '?') document.getElementById('actionsVal').textContent = actions;
+}
+
 function resetCards() {
     document.getElementById('scoreVal').textContent = '—';
     document.getElementById('unusualVal').textContent = '—';
