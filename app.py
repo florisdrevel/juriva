@@ -80,7 +80,9 @@ def init_db():
                 created_at TEXT NOT NULL,
                 stripe_session_id TEXT,
                 is_subscription INTEGER DEFAULT 0,
-                analyse_count INTEGER DEFAULT 0
+                analyse_count INTEGER DEFAULT 0,
+                subscription_end TEXT,
+                max_users INTEGER DEFAULT 1
             )
         """)
         conn.execute("""
@@ -95,6 +97,15 @@ def init_db():
                 code_sent TEXT
             )
         """)
+        # Migrate: add new columns if missing
+        for col, definition in [
+            ('subscription_end', 'TEXT'),
+            ('max_users', 'INTEGER DEFAULT 1')
+        ]:
+            try:
+                conn.execute(f"ALTER TABLE codes ADD COLUMN {col} {definition}")
+            except Exception:
+                pass
         conn.commit()
         # Seed pilot codes if not present
         pilot_codes = [
@@ -147,10 +158,23 @@ def is_code_valid(code: str):
         row = conn.execute("SELECT * FROM codes WHERE code = ?", (code,)).fetchone()
     if not row:
         return False, "invalid"
-    # Paid subscriptions — no expiry
+    plan = row["plan"]
+    # Per Analyse — valid until 1 analysis is used
+    if plan == 'Per Analyse':
+        used = row["analyse_count"] or 0
+        if used >= 1:
+            return False, "expired"
+        return True, "ok"
+    # Subscriptions with end date (ZZP/Pro/Kantoor monthly or annual)
+    if row["is_subscription"] and row["subscription_end"]:
+        end = datetime.fromisoformat(row["subscription_end"])
+        if datetime.now() > end:
+            return False, "expired"
+        return True, "ok"
+    # Subscriptions without end date — still valid (Stripe manages renewal)
     if row["is_subscription"]:
         return True, "ok"
-    # Trial / pilot codes
+    # Pilot / trial codes — 14-day window from activation
     if row["activated_at"]:
         activated_at = datetime.fromisoformat(row["activated_at"])
         if datetime.now() > activated_at + timedelta(days=TRIAL_DAYS):
@@ -162,8 +186,15 @@ def days_remaining(code: str) -> int:
         row = conn.execute("SELECT * FROM codes WHERE code = ?", (code,)).fetchone()
     if not row:
         return 0
+    plan = row["plan"]
+    if plan == 'Per Analyse':
+        used = row["analyse_count"] or 0
+        return max(0, 1 - used)
+    if row["is_subscription"] and row["subscription_end"]:
+        end = datetime.fromisoformat(row["subscription_end"])
+        return max(0, (end - datetime.now()).days)
     if row["is_subscription"]:
-        return 999  # unlimited
+        return 999
     if not row["activated_at"]:
         return TRIAL_DAYS
     activated_at = datetime.fromisoformat(row["activated_at"])
@@ -490,6 +521,9 @@ CRITICAL: Stop immediately after the ONTBREKENDE STANDAARDCLAUSULES / MISSING ST
         _playbook = playbook_text
         _second  = second_doc_text
 
+        _code = session.get('code', '')
+        _plan = session.get('plan', '')
+
         def generate():
             try:
                 with client.messages.stream(
@@ -500,8 +534,15 @@ CRITICAL: Stop immediately after the ONTBREKENDE STANDAARDCLAUSULES / MISSING ST
                     messages=[{"role": "user", "content": f"{full_prompt}\n\nCONTRACT TEXT:\n{_contract}"}]
                 ) as stream:
                     for text in stream.text_stream:
-                        # SSE format: each chunk as a data line
                         yield f"data: {json.dumps({'token': text})}\n\n"
+                # Increment analyse_count for Per Analyse plan
+                if _plan == 'Per Analyse' and _code:
+                    with get_db() as conn:
+                        conn.execute(
+                            "UPDATE codes SET analyse_count = analyse_count + 1 WHERE code = ?",
+                            (_code,)
+                        )
+                        conn.commit()
                 yield "data: [DONE]\n\n"
             except Exception as e:
                 yield f"data: {json.dumps({'error': str(e)})}\n\n"
@@ -974,6 +1015,25 @@ def create_checkout_session():
 # STRIPE — Webhook (handles payment completion)
 # ─────────────────────────────────────────────────────────────
 
+def get_subscription_end(plan_key: str):
+    """Calculate subscription end date based on plan type."""
+    if plan_key == 'per_analyse_monthly':
+        return None  # no expiry date, controlled by analyse_count
+    if 'annual' in plan_key:
+        return (datetime.now() + timedelta(days=365)).isoformat()
+    if 'monthly' in plan_key:
+        return (datetime.now() + timedelta(days=31)).isoformat()
+    return None  # pilot codes — no end date
+
+def get_max_users(plan_key: str) -> int:
+    """Return max concurrent users for plan."""
+    if 'kantoor' in plan_key:
+        return 10
+    if 'pro' in plan_key:
+        return 3
+    return 1  # ZZP, Per Analyse, pilot
+
+
 @app.route('/webhook', methods=['POST'])
 def stripe_webhook():
     import json as _json, traceback as _tb
@@ -1046,7 +1106,7 @@ def _handle_successful_payment(session_obj):
     # Store code in DB
     with get_db() as conn:
         conn.execute(
-            """INSERT INTO codes (code, plan, email, created_at, stripe_session_id, is_subscription)
+            """INSERT INTO codes (code, plan, email, created_at, stripe_session_id, is_subscription, subscription_end, max_users)
                VALUES (?, ?, ?, ?, ?, ?)""",
             (code, plan_name, customer_email, datetime.now().isoformat(), session_id, int(is_subscription))
         )
@@ -1150,9 +1210,14 @@ def admin_insert_code(secret, code, plan):
         return "Unauthorized", 401
     is_sub = 0 if plan == 'Per Analyse' else 1
     with get_db() as conn:
+        plan_key = plan.lower().replace(' ', '_')
+        sub_end = None
+        if plan in ('ZZP', 'Professioneel', 'Kantoor'):
+            sub_end = (datetime.now() + timedelta(days=31)).isoformat()
+        max_u = 10 if plan == 'Kantoor' else (3 if plan == 'Professioneel' else 1)
         conn.execute(
-            "INSERT OR REPLACE INTO codes (code, plan, email, created_at, is_subscription, analyse_count) VALUES (?, ?, ?, ?, ?, 0)",
-            (code, plan, 'test@juriva.nl', datetime.now().isoformat(), is_sub)
+            "INSERT OR REPLACE INTO codes (code, plan, email, created_at, is_subscription, analyse_count, subscription_end, max_users) VALUES (?, ?, ?, ?, ?, 0, ?, ?)",
+            (code, plan, 'test@juriva.nl', datetime.now().isoformat(), is_sub, sub_end, max_u)
         )
         conn.commit()
     return f"<h2>✓ Code inserted</h2><p>Code: <strong>{code}</strong><br>Plan: <strong>{plan}</strong></p>"
