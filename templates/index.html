@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
+<meta name="cf-no-email-obfuscation" content="1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Juriva</title>
@@ -244,6 +245,39 @@
             letter-spacing: 0.04em; transition: color 0.2s; }
         .footer-links a:hover { color: var(--accent); }
     </style>
+<!-- JURIVA CRITICAL -->
+<script>
+// Critical functions defined early — before Cloudflare can corrupt the main script block
+function toggleTheme() {
+    var t = (localStorage.getItem('juriva-theme') || 'dark') === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('juriva-theme', t);
+    document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : '');
+    var btn = document.getElementById('themeBtn');
+    if (btn) btn.textContent = t === 'light' ? '🌕' : '🌙';
+}
+function setLang(lang) {
+    localStorage.setItem('juriva-lang', lang);
+    var nl = document.getElementById('btnNL');
+    var en = document.getElementById('btnEN');
+    if (nl) nl.classList.toggle('active', lang === 'nl');
+    if (en) en.classList.toggle('active', lang === 'en');
+    if (typeof renderAll === 'function') renderAll();
+}
+// Apply theme immediately to prevent flash
+(function() {
+    var t = localStorage.getItem('juriva-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : '');
+    document.addEventListener('DOMContentLoaded', function() {
+        var btn = document.getElementById('themeBtn');
+        if (btn) btn.textContent = t === 'light' ? '🌕' : '🌙';
+        var lang = localStorage.getItem('juriva-lang') || 'nl';
+        var nl = document.getElementById('btnNL');
+        var en = document.getElementById('btnEN');
+        if (nl) nl.classList.toggle('active', lang === 'nl');
+        if (en) en.classList.toggle('active', lang === 'en');
+    });
+})();
+</script>
 </head>
 <body>
 
