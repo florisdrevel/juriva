@@ -704,9 +704,21 @@ async function startDemo() {
     const app = document.getElementById('appWrapper');
     app.style.display = 'flex';
     document.getElementById('demoBanner').style.display = 'block';
-    // Immediately disable file inputs in demo mode
+    // In demo mode: disable file inputs but enable analyse button (no file needed)
     var inputs = app.querySelectorAll('input[type="file"]');
     inputs.forEach(function(inp) { inp.disabled = true; });
+    // Show a demo file placeholder in the upload area
+    var uploadDefault = document.getElementById('uploadDefault');
+    var filePreview = document.getElementById('filePreview');
+    if (uploadDefault) uploadDefault.style.display = 'none';
+    if (filePreview) {
+        filePreview.style.display = 'flex';
+        var nameEl = filePreview.querySelector('.file-name');
+        var sizeEl = filePreview.querySelector('.file-size');
+        if (nameEl) nameEl.textContent = 'NexusCloud_PSA_Demo.pdf';
+        if (sizeEl) sizeEl.textContent = currentLang === 'nl' ? 'Demo contract — hoog risico' : 'Demo contract — high risk';
+    }
+    document.getElementById('analyseBtn').disabled = false;
     renderFooterTC();
     setTimeout(runDemo, 400);
 }
@@ -1102,6 +1114,8 @@ function renderAnalysis(text, filename) {
 
 // ── ANALYSE BUTTON — streaming ──
 document.getElementById('analyseBtn').addEventListener('click', async () => {
+    // In demo mode, run demo instead of uploading
+    if (isDemoMode) { runDemo(); return; }
     const t = T[currentLang];
     document.getElementById('status').style.display = 'block';
     document.getElementById('results').style.display = 'none';
