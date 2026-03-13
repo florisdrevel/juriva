@@ -203,7 +203,7 @@ def extract_text_from_file(file):
 def send_access_email(to_email: str, code: str, plan: str, lang: str = 'nl'):
     """Send access code email via Gmail SMTP."""
     if not GMAIL_APP_PASSWORD:
-        print(f"[EMAIL SKIP] No Gmail password configured. Code for {to_email}: {code}")
+        print(f"[EMAIL SKIP] No Gmail password configured. Code for {to_email}: {code}", flush=True)
         return False
     try:
         if lang == 'nl':
@@ -257,10 +257,10 @@ Juriva does not provide legal advice. Contracts should always be reviewed by a q
         with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10) as server:
             server.login(GMAIL_FROM, GMAIL_APP_PASSWORD)
             server.send_message(msg)
-        print(f"[EMAIL OK] Sent code {code} to {to_email}")
+        print(f"[EMAIL OK] Sent code {code} to {to_email}", flush=True)
         return True
     except Exception as e:
-        print(f"[EMAIL ERROR] {e}")
+        print(f"[EMAIL ERROR] {e}", flush=True)
         return False
 
 # ─────────────────────────────────────────
@@ -922,46 +922,43 @@ def create_checkout_session():
 
 @app.route('/webhook', methods=['POST'])
 def stripe_webhook():
-    print("[WEBHOOK] ENTERING ROUTE", flush=True)
-    import sys; sys.stdout.flush()
     import json as _json, traceback as _tb
-    print("[WEBHOOK] Request received", flush=True)
+    print("[WEBHOOK] A - entering route", flush=True)
     try:
         payload = request.get_data()
-        print(f"[WEBHOOK] Payload length: {len(payload)}")
-
+        print(f"[WEBHOOK] B - payload {len(payload)} bytes", flush=True)
+        sig_header = request.headers.get('Stripe-Signature', '')
+        print(f"[WEBHOOK] C - sig={bool(sig_header)} secret={bool(STRIPE_WEBHOOK_SECRET)}", flush=True)
         try:
-            sig_header = request.headers.get('Stripe-Signature', '')
             if STRIPE_WEBHOOK_SECRET and sig_header:
                 event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
-                print("[WEBHOOK] Signature verified OK")
+                print("[WEBHOOK] D - signature verified", flush=True)
             else:
                 event = _json.loads(payload)
-                print("[WEBHOOK] Parsed without signature verification")
+                print("[WEBHOOK] D - parsed without verification", flush=True)
         except Exception as e:
-            print(f"[WEBHOOK] Parse/verify error: {e}")
+            print(f"[WEBHOOK] FAIL parse: {e}", flush=True)
             return jsonify({'error': str(e)}), 400
 
         event_type = event.get('type', 'unknown')
-        print(f"[WEBHOOK] Event type: {event_type}")
+        print(f"[WEBHOOK] E - event type: {event_type}", flush=True)
 
         if event_type == 'checkout.session.completed':
             session_obj = event['data']['object']
-            session_id = session_obj.get('id', 'unknown')
-            print(f"[WEBHOOK] Processing session: {session_id}")
+            print(f"[WEBHOOK] F - calling handler", flush=True)
             try:
                 _handle_successful_payment(session_obj)
-                print(f"[WEBHOOK] Handler completed OK")
+                print("[WEBHOOK] G - handler done", flush=True)
             except Exception as e:
-                print(f"[WEBHOOK ERROR] Handler failed: {e}")
+                print(f"[WEBHOOK] FAIL handler: {e}", flush=True)
                 _tb.print_exc()
 
         return jsonify({'status': 'ok'})
 
     except Exception as e:
-        print(f"[WEBHOOK FATAL] Unexpected error: {e}")
+        print(f"[WEBHOOK] FATAL: {e}", flush=True)
         _tb.print_exc()
-        return jsonify({'status': 'ok'})  # Always return 200 to Stripe
+        return jsonify({'status': 'ok'})
 
 
 def _handle_successful_payment(session_obj):
@@ -980,7 +977,7 @@ def _handle_successful_payment(session_obj):
             "SELECT id FROM payments WHERE stripe_session_id = ?", (session_id,)
         ).fetchone()
         if existing:
-            print(f"[WEBHOOK] Already processed session {session_id}")
+            print(f"[WEBHOOK] Already processed session {session_id}", flush=True)
             return
 
     # Generate unique code
@@ -1008,7 +1005,7 @@ def _handle_successful_payment(session_obj):
 
     # Send email
     email_sent = send_access_email(customer_email, code, plan_name, lang)
-    print(f"[PAYMENT OK] {customer_email} bought {plan_name} → code {code} → email sent: {email_sent}")
+    print(f"[PAYMENT OK] {customer_email} bought {plan_name} → code {code} → email sent: {email_sent}", flush=True)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -1022,4 +1019,3 @@ def success():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
