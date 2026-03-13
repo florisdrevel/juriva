@@ -323,6 +323,18 @@ def unhandled(e): return jsonify({'error': f'Server error: {str(e)}'}), 500
 def home():
     return render_template('index.html')
 
+@app.route('/sitemap.xml')
+def sitemap():
+    from flask import Response
+    xml = open(os.path.join(os.path.dirname(__file__), 'sitemap.xml')).read()
+    return Response(xml, mimetype='application/xml')
+
+@app.route('/robots.txt')
+def robots():
+    from flask import Response
+    txt = open(os.path.join(os.path.dirname(__file__), 'robots.txt')).read()
+    return Response(txt, mimetype='text/plain')
+
 @app.route('/api/verify-code', methods=['POST'])
 def verify_code():
     data = request.get_json()
