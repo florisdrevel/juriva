@@ -1217,23 +1217,23 @@ def admin_clear_session(secret, session_id):
 
 
 @app.route('/admin/insert-code/<secret>/<code>/<plan>')
-def admin_insert_code(secret, code, plan):
-    """Insert a test code directly into the DB."""
+@app.route('/admin/insert-code/<secret>/<code>/<plan>/<int:days>')
+def admin_insert_code(secret, code, plan, days=31):
+    """Insert a code directly into the DB. Optional days parameter overrides default expiry."""
     if secret != (os.environ.get('SECRET_KEY') or 'REDACTED-ADMIN-SECRET'):
         return "Unauthorized", 401
     is_sub = 0 if plan == 'Per Analyse' else 1
     with get_db() as conn:
-        plan_key = plan.lower().replace(' ', '_')
         sub_end = None
         if plan in ('ZZP', 'Professioneel', 'Kantoor'):
-            sub_end = (datetime.now() + timedelta(days=31)).isoformat()
+            sub_end = (datetime.now() + timedelta(days=days)).isoformat()
         max_u = 10 if plan == 'Kantoor' else (3 if plan == 'Professioneel' else 1)
         conn.execute(
             "INSERT OR REPLACE INTO codes (code, plan, email, created_at, is_subscription, analyse_count, subscription_end, max_users) VALUES (?, ?, ?, ?, ?, 0, ?, ?)",
             (code, plan, 'test@juriva.nl', datetime.now().isoformat(), is_sub, sub_end, max_u)
         )
         conn.commit()
-    return f"<h2>✓ Code inserted</h2><p>Code: <strong>{code}</strong><br>Plan: <strong>{plan}</strong></p>"
+    return f"<h2>✓ Code inserted</h2><p>Code: <strong>{code}</strong><br>Plan: <strong>{plan}</strong><br>Valid for: <strong>{days} days</strong><br>Expires: <strong>{sub_end}</strong></p>"
 
 
 @app.route('/admin/insert-test-code/<secret>/<code>/<plan>')
