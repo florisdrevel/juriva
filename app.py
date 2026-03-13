@@ -944,7 +944,14 @@ def stripe_webhook():
     if event_type == 'checkout.session.completed':
         session_obj = event['data']['object']
         print(f"[WEBHOOK] Processing payment: {session_obj.get('id', 'unknown')}")
-        _handle_successful_payment(session_obj)
+        try:
+            _handle_successful_payment(session_obj)
+        except Exception as e:
+            print(f"[WEBHOOK ERROR] Payment handler failed: {e}")
+            import traceback
+            traceback.print_exc()
+            # Still return 200 so Stripe doesn't retry endlessly
+            return jsonify({'status': 'error', 'detail': str(e)})
 
     return jsonify({'status': 'ok'})
 
