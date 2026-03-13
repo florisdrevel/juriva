@@ -33,10 +33,10 @@ app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-ADMIN-SECRET"
 # CONFIGURATION — set via Railway environment variables
 # ─────────────────────────────────────────────────────────────
 ANTHROPIC_API_KEY   = os.environ.get("ANTHROPIC_API_KEY", "REDACTED-ANTHROPIC-KEY")
-STRIPE_SECRET_KEY   = os.environ.get("STRIPE_SECRET_KEY", "")
-STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+STRIPE_SECRET_KEY   = os.environ.get("STRIPE_SECRET_KEY", "REDACTED-STRIPE-SECRET-KEY")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "REDACTED-STRIPE-WEBHOOK-SECRET")
 GMAIL_FROM          = os.environ.get("GMAIL_FROM", "info.juriva@gmail.com")
-GMAIL_APP_PASSWORD  = os.environ.get("GMAIL_APP_PASSWORD", "")
+GMAIL_APP_PASSWORD  = os.environ.get("GMAIL_APP_PASSWORD", "FLoppieJuriva69")
 
 # Stripe Price IDs — fill in after creating products in Stripe dashboard
 STRIPE_PRICES = {
@@ -1022,3 +1022,4 @@ def success():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
