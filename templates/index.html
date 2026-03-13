@@ -280,7 +280,7 @@
             <button class="gate-btn" id="codeBtn" onclick="submitCode()">Toegang</button>
         </div>
         <div class="gate-error" id="gateError"></div>
-        <div class="gate-contact" id="gateContact">Geen toegangscode? Vraag een gratis pilot aan.<br><a href="/cdn-cgi/l/email-protection#244d4a424b0a4e51564d5245644349454d480a474b49"><span class="__cf_email__" data-cfemail="8ce5e2eae3a2e6f9fee5faedccebe1ede5e0a2efe3e1">[email&#160;protected]</span></a></div>
+        <div class="gate-contact" id="gateContact">Geen toegangscode? Vraag een gratis pilot aan.<br><a id="gateEmail" href="#">info.juriva&#64;gmail.com</a></div>
     </div>
 </div>
 
@@ -321,7 +321,7 @@
         <div id="demoBanner" class="demo-banner" style="display:none;">
             🔍 <strong>Live demo</strong> — dit is een voorbeeldcontract (NexusCloud PSA, risicoscore 9/10).
             Wil je je eigen contract analyseren?
-            <a href="/cdn-cgi/l/email-protection#81e8efe7eeafebf4f3e8f7e0c1e6ece0e8edafe2eeecbef2f4e3ebe4e2f5bcd5eee4e6e0efe6f2e2eee5e4a1e0e0eff7f3e0e6e4ef">Vraag een gratis 14-daagse toegangscode aan →</a>
+            <a href="#" id="demoBannerEmail">Vraag een gratis 14-daagse toegangscode aan →</a>
         </div>
 
         <div class="upload-section">
@@ -435,12 +435,12 @@
         <div class="footer-tc-content" id="footerTCContent"></div>
         <div class="footer-bottom">
             <div class="footer-copy" id="footerCopy">&copy; 2026 Juriva &mdash; Alle rechten voorbehouden</div>
-            <div class="footer-links"><a href="/cdn-cgi/l/email-protection#f0999e969fde9a8582998691b0979d91999cde939f9d"><span class="__cf_email__" data-cfemail="422b2c242d6c2837302b342302252f232b2e6c212d2f">[email&#160;protected]</span></a></div>
+            <div class="footer-links"><a id="footerEmail" href="#">info.juriva&#64;gmail.com</a></div>
         </div>
     </footer>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 let selectedFile = null, selectedPlaybook = null, selectedSecondDoc = null;
 let currentLang = 'nl', termsAccepted = false, tcOpen = false;
 let lastAnalysis = '', lastFilename = '';
@@ -455,6 +455,19 @@ function applyTheme(theme) {
 }
 function toggleTheme() { applyTheme(currentTheme === 'dark' ? 'light' : 'dark'); }
 applyTheme(currentTheme);
+
+// Wire up email links (bypasses Cloudflare obfuscation)
+(function() {
+    const em = 'info.juriva' + '@' + 'gmail.com';
+    const mailto = 'mailto:' + em;
+    ['gateEmail','footerEmail'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.href = mailto; el.textContent = em; }
+    });
+    const dbe = document.getElementById('demoBannerEmail');
+    if (dbe) dbe.href = mailto + '?subject=Toegangscode aanvragen – Juriva';
+})();
+
 
 const termsNL = `<h3>1. Geen Juridisch Advies</h3><p>Juriva is een geautomatiseerd analysetool en levert geen juridisch advies. De analyses zijn uitsluitend bedoeld als ondersteunend instrument en vervangen niet het oordeel van een gekwalificeerde juridische professional. Gebruikers zijn zelf verantwoordelijk voor alle beslissingen die op basis van de analyses worden genomen.</p><h3>2. Beperking van Aansprakelijkheid</h3><p>Juriva en haar ontwikkelaars zijn niet aansprakelijk voor directe, indirecte, incidentele of gevolgschade die voortvloeit uit het gebruik van dit platform, inclusief maar niet beperkt tot financi\u00eble verliezen, gemiste contractuele verplichtingen of juridische geschillen die voortvloeien uit het vertrouwen op de output van dit systeem.</p><h3>3. Geen Garantie op Volledigheid</h3><p>Juriva streeft naar nauwkeurige analyse maar garandeert niet dat alle risico\u2019s, clausules of gebreken in een document worden ge\u00efdentificeerd. Het systeem kan fouten bevatten. Contracten dienen altijd door een bevoegde advocaat te worden gereviewed voordat zij worden ondertekend.</p><h3>4. Gegevensverwerking en Privacy</h3><p>Documenten die worden ge\u00fcpload worden uitsluitend in tijdelijk geheugen verwerkt en nooit opgeslagen op onze servers. Na afronding van de analyse worden alle documentgegevens onmiddellijk en automatisch gewist. Juriva verkoopt, deelt of verwerkt uw documenten niet voor enig ander doel.</p><h3>5. Vertrouwelijkheid</h3><p>Gebruikers zijn zelf verantwoordelijk voor de vertrouwelijkheid van de documenten die zij uploaden. Juriva implementeert technische maatregelen om gegevens te beschermen, maar kan de veiligheid van documenttransmissie via het internet niet garanderen.</p><h3>6. Toepasselijk Recht</h3><p>Op deze voorwaarden is Nederlands recht van toepassing. Geschillen worden voorgelegd aan de bevoegde rechter in Amsterdam.</p><h3>7. Wijzigingen</h3><p>Juriva behoudt het recht deze voorwaarden te wijzigen. Voortgezet gebruik na wijziging geldt als acceptatie van de nieuwe voorwaarden.</p>`;
 
