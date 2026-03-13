@@ -352,7 +352,7 @@
             </div>
         </div>
 
-        <div class="upload-section">
+        <div class="upload-section" id="playbookSection">
             <div class="upload-label"><span id="labelPlaybook">Playbook / Gouden Standaard</span><span class="badge badge-optional" id="badgeOptional1">Optioneel</span></div>
             <div class="upload-zone secondary" id="playbookZone" onclick="handleZoneClick('playbook')">
                 <div class="upload-default" id="playbookDefault">
@@ -367,7 +367,7 @@
             </div>
         </div>
 
-        <div class="upload-section">
+        <div class="upload-section" id="secondDocSection">
             <div class="upload-label"><span id="labelSecondDoc">Tweede Document</span><span class="badge badge-optional" id="badgeOptional2">Optioneel</span></div>
             <div class="upload-zone secondary" id="secondDocZone" onclick="handleZoneClick('secondDoc')">
                 <div class="upload-default" id="secondDocDefault">
@@ -853,6 +853,7 @@ async function submitCode() {
         window._jurivaPlan = data.plan || 'pilot';
         window._jurivaAnalysesRemaining = (data.analyses_remaining !== undefined) ? data.analyses_remaining : 999;
         showTerms(data.days_remaining);
+        updateProSections();
     } else {
         errEl.textContent = data.error === 'expired' ? t.gateErrorExpired : t.gateErrorInvalid;
         errEl.style.display = 'block'; btn.disabled = false; btn.textContent = t.gateBtnText;
@@ -891,6 +892,18 @@ function showApp(days) {
     }
     renderFooterTC();
     updateAnalysesCounter();
+    updateProSections();
+}
+
+function updateProSections() {
+    var plan = window._jurivaPlan || 'pilot';
+    var isPro = (plan === 'Professioneel' || plan === 'Kantoor');
+    var isDemo = isDemoMode;
+    var showPro = isPro && !isDemo;
+    var ps = document.getElementById('playbookSection');
+    var ss = document.getElementById('secondDocSection');
+    if (ps) ps.style.display = showPro ? '' : 'none';
+    if (ss) ss.style.display = showPro ? '' : 'none';
 }
 
 function updateAnalysesCounter() {
