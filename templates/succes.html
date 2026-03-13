@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juriva — Betaling geslaagd</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #080808; --surface: #0f0f0f; --border: rgba(255,255,255,0.07);
+        --text: #f0ede8; --muted: rgba(240,237,232,0.4); --accent: #c8b89a;
+        --green: #4aad7a;
+    }
+    :root[data-theme="light"] {
+        --bg: #f5f3ef; --surface: #ffffff; --border: rgba(0,0,0,0.08);
+        --text: #1a1815; --muted: rgba(26,24,21,0.4); --accent: #9a7c52;
+        --green: #2e8a5a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif;
+        min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+        justify-content: center; padding: 40px 24px; text-align: center; }
+    .check { font-size: 56px; margin-bottom: 24px; }
+    h1 { font-family: 'Instrument Serif', serif; font-size: clamp(28px, 5vw, 42px);
+        color: var(--text); margin-bottom: 16px; line-height: 1.2; }
+    p { font-size: 16px; color: var(--muted); line-height: 1.75;
+        max-width: 460px; margin: 0 auto 32px; }
+    .highlight { color: var(--green); font-weight: 600; }
+    .card { background: var(--surface); border: 1px solid var(--border);
+        border-radius: 12px; padding: 28px 32px; max-width: 440px;
+        margin: 0 auto 32px; text-align: left; }
+    .card-row { display: flex; justify-content: space-between; align-items: center;
+        font-size: 13.5px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .card-row:last-child { border-bottom: none; }
+    .card-row .lbl { color: var(--muted); }
+    .card-row .val { color: var(--text); font-weight: 500; }
+    .btn { display: inline-block; background: var(--accent); color: var(--bg);
+        padding: 13px 32px; border-radius: 8px; font-weight: 600; font-size: 14px;
+        text-decoration: none; transition: opacity 0.2s; margin-bottom: 16px; }
+    .btn:hover { opacity: 0.85; }
+    .sub-link { font-size: 13px; color: var(--muted); text-decoration: none; }
+    .sub-link:hover { color: var(--accent); }
+    #globalControls { position: fixed; top: 20px; right: 24px; display: flex;
+        align-items: center; gap: 10px; }
+    .theme-btn { background: none; border: none; color: var(--muted); cursor: pointer;
+        padding: 6px 10px; border-radius: 100px; font-size: 15px; }
+    .lang-toggle { display: flex; gap: 2px; background: var(--surface);
+        border: 1px solid var(--border); border-radius: 100px; padding: 4px; }
+    .lang-btn { background: none; border: none; color: var(--muted);
+        font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
+        padding: 4px 10px; border-radius: 100px; cursor: pointer; transition: all 0.2s; }
+    .lang-btn.active { background: var(--text); color: var(--bg); }
+</style>
+</head>
+<body>
+
+<div id="globalControls">
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+    <div class="lang-toggle">
+        <button class="lang-btn active" id="btnNL" onclick="setLang('nl')">NL</button>
+        <button class="lang-btn" id="btnEN" onclick="setLang('en')">EN</button>
+    </div>
+</div>
+
+<div class="check">✅</div>
+<h1 id="title">Betaling geslaagd</h1>
+<p id="desc">Uw toegangscode is onderweg. <span class="highlight">Controleer uw inbox</span> — de code arriveert binnen enkele seconden.</p>
+
+<div class="card">
+    <div class="card-row"><span class="lbl" id="lbl1">Wat nu?</span></div>
+    <div class="card-row"><span class="lbl" id="step1">1.</span><span class="val" id="val1">Controleer uw e-mail op de toegangscode</span></div>
+    <div class="card-row"><span class="lbl" id="step2">2.</span><span class="val" id="val2">Ga naar juriva.nl en voer de code in</span></div>
+    <div class="card-row"><span class="lbl" id="step3">3.</span><span class="val" id="val3">Upload uw eerste contract en analyseer</span></div>
+</div>
+
+<a href="/" class="btn" id="ctaBtn">Naar Juriva →</a><br>
+<a href="mailto:info.juriva@gmail.com" class="sub-link" id="helpLink">Geen e-mail ontvangen? Neem contact op</a>
+
+<script>
+let currentTheme = localStorage.getItem('juriva-theme') || 'dark';
+function applyTheme(t) {
+    currentTheme = t;
+    document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : '');
+    document.getElementById('themeBtn').textContent = t === 'light' ? '🌕' : '🌙';
+    localStorage.setItem('juriva-theme', t);
+}
+function toggleTheme() { applyTheme(currentTheme === 'dark' ? 'light' : 'dark'); }
+applyTheme(currentTheme);
+
+const T = {
+    nl: {
+        title: 'Betaling geslaagd',
+        desc: 'Uw toegangscode is onderweg. <span class="highlight">Controleer uw inbox</span> — de code arriveert binnen enkele seconden.',
+        lbl1: 'Wat nu?', step1: '1.', step2: '2.', step3: '3.',
+        val1: 'Controleer uw e-mail op de toegangscode',
+        val2: 'Ga naar juriva.nl en voer de code in',
+        val3: 'Upload uw eerste contract en analyseer',
+        ctaBtn: 'Naar Juriva →',
+        helpLink: 'Geen e-mail ontvangen? Neem contact op',
+    },
+    en: {
+        title: 'Payment successful',
+        desc: 'Your access code is on its way. <span class="highlight">Check your inbox</span> — the code arrives within seconds.',
+        lbl1: 'What next?', step1: '1.', step2: '2.', step3: '3.',
+        val1: 'Check your email for the access code',
+        val2: 'Go to juriva.nl and enter the code',
+        val3: 'Upload your first contract and analyse',
+        ctaBtn: 'Go to Juriva →',
+        helpLink: "Didn't receive an email? Get in touch",
+    }
+};
+
+let currentLang = localStorage.getItem('juriva-lang') || 'nl';
+function setLang(lang) {
+    currentLang = lang;
+    localStorage.setItem('juriva-lang', lang);
+    document.getElementById('btnNL').classList.toggle('active', lang === 'nl');
+    document.getElementById('btnEN').classList.toggle('active', lang === 'en');
+    const t = T[lang];
+    document.getElementById('title').textContent = t.title;
+    document.getElementById('desc').innerHTML = t.desc;
+    document.getElementById('lbl1').textContent = t.lbl1;
+    document.getElementById('val1').textContent = t.val1;
+    document.getElementById('val2').textContent = t.val2;
+    document.getElementById('val3').textContent = t.val3;
+    document.getElementById('ctaBtn').textContent = t.ctaBtn;
+    document.getElementById('helpLink').textContent = t.helpLink;
+}
+setLang(currentLang);
+</script>
+</body>
+</html>
