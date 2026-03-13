@@ -1130,4 +1130,18 @@ async function downloadReport() {
         const a = document.createElement('a');
         const safe = (lastFilename || 'rapport').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
         a.href = url;
-        a.download = 'Juriva_' + safe + '_' + new Da
+        a.download = 'Juriva_' + safe + '_' + new Date().toISOString().slice(0, 10) + '.docx';
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch(err) {
+        console.error(err);
+        alert(currentLang === 'nl' ? 'Download mislukt: ' + err.message : 'Download failed: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        span.textContent = origText;
+    }
+}
+</script>
+</body>
+</html>
