@@ -207,7 +207,7 @@ def send_access_email(to_email: str, code: str, plan: str, lang: str = 'nl'):
         print(f"[EMAIL SKIP] No Resend API key. Code for {to_email}: {code}", flush=True)
         return False
     try:
-        import urllib.request
+        import requests as _requests
         if lang == 'nl':
             subject = f"Uw Juriva toegangscode — {plan}"
             html_body = f"""<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1815">
@@ -243,30 +243,21 @@ def send_access_email(to_email: str, code: str, plan: str, lang: str = 'nl'):
   <p style="font-size:11px;color:#999;margin-top:32px;border-top:1px solid #eee;padding-top:12px">Juriva does not provide legal advice. Contracts should always be reviewed by a qualified lawyer.</p>
 </div>"""
 
-        payload = json.dumps({
-            "from": "Juriva <info@juriva.nl>",
-            "to": [to_email],
-            "subject": subject,
-            "html": html_body
-        }).encode('utf-8')
-
-        req = urllib.request.Request(
+        resp = _requests.post(
             "https://api.resend.com/emails",
-            data=payload,
-            headers={
-                "Authorization": f"Bearer {RESEND_API_KEY}",
-                "Content-Type": "application/json"
+            json={
+                "from": "Juriva <info@juriva.nl>",
+                "to": [to_email],
+                "subject": subject,
+                "html": html_body
             },
-            method="POST"
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}"},
+            timeout=15
         )
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            result = json.loads(resp.read().decode())
-            print(f"[EMAIL OK] Sent to {to_email} — id: {result.get('id')}", flush=True)
-            return True
-    except urllib.error.HTTPError as e:
-        body = e.read().decode('utf-8', errors='replace')
-        print(f"[EMAIL ERROR] HTTP {e.code}: {e.reason} — {body}", flush=True)
-        return False
+        print(f"[EMAIL] Resend status: {resp.status_code} — {resp.text}", flush=True)
+        resp.raise_for_status()
+        print(f"[EMAIL OK] Sent to {to_email}", flush=True)
+        return True
     except Exception as e:
         print(f"[EMAIL ERROR] {e}", flush=True)
         import traceback; traceback.print_exc()
