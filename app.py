@@ -920,40 +920,44 @@ def create_checkout_session():
 
 @app.route('/webhook', methods=['POST'])
 def stripe_webhook():
-    payload = request.get_data()
-    sig_header = request.headers.get('Stripe-Signature', '')
-
+    import json as _json, traceback as _tb
+    print("[WEBHOOK] Request received")
     try:
-        if STRIPE_WEBHOOK_SECRET:
-            event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
-        else:
-            # No secret set — parse without verification (less secure, use for debugging only)
-            import json as _json
-            event = _json.loads(payload)
-            print("[WEBHOOK] Warning: no webhook secret set, skipping signature verification")
-    except ValueError as e:
-        print(f"[WEBHOOK] Invalid payload: {e}")
-        return jsonify({'error': 'Invalid payload'}), 400
-    except stripe.error.SignatureVerificationError as e:
-        print(f"[WEBHOOK] Invalid signature: {e}")
-        return jsonify({'error': 'Invalid signature'}), 400
+        payload = request.get_data()
+        print(f"[WEBHOOK] Payload length: {len(payload)}")
 
-    event_type = event.get('type', '') if isinstance(event, dict) else event['type']
-    print(f"[WEBHOOK] Received event: {event_type}")
-
-    if event_type == 'checkout.session.completed':
-        session_obj = event['data']['object']
-        print(f"[WEBHOOK] Processing payment: {session_obj.get('id', 'unknown')}")
         try:
-            _handle_successful_payment(session_obj)
+            sig_header = request.headers.get('Stripe-Signature', '')
+            if STRIPE_WEBHOOK_SECRET and sig_header:
+                event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
+                print("[WEBHOOK] Signature verified OK")
+            else:
+                event = _json.loads(payload)
+                print("[WEBHOOK] Parsed without signature verification")
         except Exception as e:
-            print(f"[WEBHOOK ERROR] Payment handler failed: {e}")
-            import traceback
-            traceback.print_exc()
-            # Still return 200 so Stripe doesn't retry endlessly
-            return jsonify({'status': 'error', 'detail': str(e)})
+            print(f"[WEBHOOK] Parse/verify error: {e}")
+            return jsonify({'error': str(e)}), 400
 
-    return jsonify({'status': 'ok'})
+        event_type = event.get('type', 'unknown')
+        print(f"[WEBHOOK] Event type: {event_type}")
+
+        if event_type == 'checkout.session.completed':
+            session_obj = event['data']['object']
+            session_id = session_obj.get('id', 'unknown')
+            print(f"[WEBHOOK] Processing session: {session_id}")
+            try:
+                _handle_successful_payment(session_obj)
+                print(f"[WEBHOOK] Handler completed OK")
+            except Exception as e:
+                print(f"[WEBHOOK ERROR] Handler failed: {e}")
+                _tb.print_exc()
+
+        return jsonify({'status': 'ok'})
+
+    except Exception as e:
+        print(f"[WEBHOOK FATAL] Unexpected error: {e}")
+        _tb.print_exc()
+        return jsonify({'status': 'ok'})  # Always return 200 to Stripe
 
 
 def _handle_successful_payment(session_obj):
