@@ -334,10 +334,23 @@ def check_auth():
     if not valid:
         session.clear()
         return jsonify({'authenticated': False, 'reason': reason})
+    # Get analyses remaining for Per Analyse plan
+    plan = session.get('plan', 'pilot')
+    analyses_remaining = 999
+    if plan == 'Per Analyse':
+        with get_db() as conn:
+            row = conn.execute("SELECT analyse_count FROM codes WHERE code = ?", (code,)).fetchone()
+            used = 0
+            try: used = row['analyse_count'] if row else 0
+            except Exception: used = 0
+        analyses_remaining = max(0, 1 - used)
+
     return jsonify({
         'authenticated': True,
         'terms_accepted': session.get('terms_accepted', False),
-        'days_remaining': days_remaining(code)
+        'days_remaining': days_remaining(code),
+        'plan': plan,
+        'analyses_remaining': analyses_remaining
     })
 
 @app.route('/api/accept-terms', methods=['POST'])
