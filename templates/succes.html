@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
+<meta name="cf-no-email-obfuscation" content="1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Juriva — Betaling geslaagd</title>
@@ -10,31 +11,33 @@
     :root {
         --bg: #080808; --surface: #0f0f0f; --border: rgba(255,255,255,0.07);
         --text: #f0ede8; --muted: rgba(240,237,232,0.4); --accent: #c8b89a;
-        --green: #4aad7a;
+        --green: #2d5a3d;
     }
     :root[data-theme="light"] {
         --bg: #f5f3ef; --surface: #ffffff; --border: rgba(0,0,0,0.08);
         --text: #1a1815; --muted: rgba(26,24,21,0.4); --accent: #9a7c52;
-        --green: #2e8a5a;
+        --green: #1e4a2e;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif;
         min-height: 100vh; display: flex; flex-direction: column; align-items: center;
         justify-content: center; padding: 40px 24px; text-align: center; }
-    .check { font-size: 56px; margin-bottom: 24px; }
+    h1 { margin-top: 0; }
     h1 { font-family: 'Instrument Serif', serif; font-size: clamp(28px, 5vw, 42px);
         color: var(--text); margin-bottom: 16px; line-height: 1.2; }
     p { font-size: 16px; color: var(--muted); line-height: 1.75;
         max-width: 460px; margin: 0 auto 32px; }
-    .highlight { color: var(--green); font-weight: 600; }
+    .highlight { color: var(--accent); }
     .card { background: var(--surface); border: 1px solid var(--border);
-        border-radius: 12px; padding: 28px 32px; max-width: 440px;
+        border-radius: 12px; padding: 32px 37px; max-width: 506px;
         margin: 0 auto 32px; text-align: left; }
-    .card-row { display: flex; justify-content: space-between; align-items: center;
-        font-size: 13.5px; padding: 8px 0; border-bottom: 1px solid var(--border); }
-    .card-row:last-child { border-bottom: none; }
-    .card-row .lbl { color: var(--muted); }
-    .card-row .val { color: var(--text); font-weight: 500; }
+    .card-header { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+        color: var(--muted); margin-bottom: 16px; text-align: center; }
+    .step-row { display: flex; align-items: baseline; gap: 0;
+        font-size: 13.5px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .step-row:last-child { border-bottom: none; }
+    .step-num { color: var(--accent); font-weight: 600; flex-shrink: 0; }
+    .step-txt { color: var(--text); line-height: 1.5; }
     .btn { display: inline-block; background: var(--accent); color: var(--bg);
         padding: 13px 32px; border-radius: 8px; font-weight: 600; font-size: 14px;
         text-decoration: none; transition: opacity 0.2s; margin-bottom: 16px; }
@@ -52,6 +55,39 @@
         padding: 4px 10px; border-radius: 100px; cursor: pointer; transition: all 0.2s; }
     .lang-btn.active { background: var(--text); color: var(--bg); }
 </style>
+<!-- JURIVA CRITICAL -->
+<script>
+// Critical functions defined early — before Cloudflare can corrupt the main script block
+function toggleTheme() {
+    var t = (localStorage.getItem('juriva-theme') || 'dark') === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('juriva-theme', t);
+    document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : '');
+    var btn = document.getElementById('themeBtn');
+    if (btn) btn.textContent = t === 'light' ? '🌕' : '🌙';
+}
+function setLang(lang) {
+    localStorage.setItem('juriva-lang', lang);
+    var nl = document.getElementById('btnNL');
+    var en = document.getElementById('btnEN');
+    if (nl) nl.classList.toggle('active', lang === 'nl');
+    if (en) en.classList.toggle('active', lang === 'en');
+    if (typeof renderAll === 'function') renderAll();
+}
+// Apply theme immediately to prevent flash
+(function() {
+    var t = localStorage.getItem('juriva-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : '');
+    document.addEventListener('DOMContentLoaded', function() {
+        var btn = document.getElementById('themeBtn');
+        if (btn) btn.textContent = t === 'light' ? '🌕' : '🌙';
+        var lang = localStorage.getItem('juriva-lang') || 'nl';
+        var nl = document.getElementById('btnNL');
+        var en = document.getElementById('btnEN');
+        if (nl) nl.classList.toggle('active', lang === 'nl');
+        if (en) en.classList.toggle('active', lang === 'en');
+    });
+})();
+</script>
 </head>
 <body>
 
@@ -63,9 +99,9 @@
     </div>
 </div>
 
-<div class="check">✅</div>
+<div style="width:32px;height:2px;background:var(--accent);margin:0 auto 28px;"></div>
 <h1 id="title">Betaling geslaagd</h1>
-<p id="desc">Uw toegangscode is onderweg. <span class="highlight">Controleer uw inbox</span> — de code arriveert binnen enkele seconden.</p>
+<p id="desc">Uw toegangscode is onderweg — controleer uw inbox.</p>
 
 <div class="card">
     <div class="card-row"><span class="lbl" id="lbl1">Wat nu?</span></div>
@@ -75,7 +111,7 @@
 </div>
 
 <a href="/" class="btn" id="ctaBtn">Naar Juriva →</a><br>
-<a href="mailto:info.juriva@gmail.com" class="sub-link" id="helpLink">Geen e-mail ontvangen? Neem contact op</a>
+<a id="footerEmail" href="#">info.juriva&#64;gmail.com</a>
 
 <script>
 let currentTheme = localStorage.getItem('juriva-theme') || 'dark';
@@ -91,8 +127,8 @@ applyTheme(currentTheme);
 const T = {
     nl: {
         title: 'Betaling geslaagd',
-        desc: 'Uw toegangscode is onderweg. <span class="highlight">Controleer uw inbox</span> — de code arriveert binnen enkele seconden.',
-        lbl1: 'Wat nu?', step1: '1.', step2: '2.', step3: '3.',
+        desc: 'Uw toegangscode is onderweg — controleer uw inbox.',
+        lbl1: 'Wat nu?',
         val1: 'Controleer uw e-mail op de toegangscode',
         val2: 'Ga naar juriva.nl en voer de code in',
         val3: 'Upload uw eerste contract en analyseer',
@@ -101,8 +137,8 @@ const T = {
     },
     en: {
         title: 'Payment successful',
-        desc: 'Your access code is on its way. <span class="highlight">Check your inbox</span> — the code arrives within seconds.',
-        lbl1: 'What next?', step1: '1.', step2: '2.', step3: '3.',
+        desc: 'Your access code is on its way — check your inbox.',
+        lbl1: 'What next?',
         val1: 'Check your email for the access code',
         val2: 'Go to juriva.nl and enter the code',
         val3: 'Upload your first contract and analyse',
@@ -124,10 +160,4 @@ function setLang(lang) {
     document.getElementById('val1').textContent = t.val1;
     document.getElementById('val2').textContent = t.val2;
     document.getElementById('val3').textContent = t.val3;
-    document.getElementById('ctaBtn').textContent = t.ctaBtn;
-    document.getElementById('helpLink').textContent = t.helpLink;
-}
-setLang(currentLang);
-</script>
-</body>
-</html>
+    document.getElementByI
