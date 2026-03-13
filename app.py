@@ -37,6 +37,7 @@ STRIPE_SECRET_KEY   = os.environ.get("STRIPE_SECRET_KEY", "REDACTED-STRIPE-SECRE
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "REDACTED-STRIPE-WEBHOOK-SECRET")
 GMAIL_FROM          = os.environ.get("GMAIL_FROM", "info.juriva@gmail.com")
 GMAIL_APP_PASSWORD  = os.environ.get("GMAIL_APP_PASSWORD", "FLoppieJuriva69")
+RESEND_API_KEY      = os.environ.get("RESEND_API_KEY", "re_PWYpkxed_DZSfCQscmZvSgMLA379N9rba")
 
 # Stripe Price IDs — fill in after creating products in Stripe dashboard
 STRIPE_PRICES = {
@@ -201,66 +202,70 @@ def extract_text_from_file(file):
 # EMAIL SENDER
 # ─────────────────────────────────────────
 def send_access_email(to_email: str, code: str, plan: str, lang: str = 'nl'):
-    """Send access code email via Gmail SMTP."""
-    if not GMAIL_APP_PASSWORD:
-        print(f"[EMAIL SKIP] No Gmail password configured. Code for {to_email}: {code}", flush=True)
+    """Send access code email via Resend API."""
+    if not RESEND_API_KEY:
+        print(f"[EMAIL SKIP] No Resend API key. Code for {to_email}: {code}", flush=True)
         return False
     try:
+        import urllib.request
         if lang == 'nl':
             subject = f"Uw Juriva toegangscode — {plan}"
-            body = f"""Beste,
-
-Bedankt voor uw aankoop van Juriva {plan}.
-
-Uw toegangscode is:
-
-    {code}
-
-Ga naar https://juriva.nl en voer deze code in om direct te beginnen.
-
-Heeft u vragen? Stuur een e-mail naar info.juriva@gmail.com — wij reageren binnen 1 werkdag.
-
-Met vriendelijke groet,
-Florean Drevel
-Juriva · juriva.nl
-
----
-Juriva levert geen juridisch advies. Contracten dienen altijd door een bevoegde advocaat te worden beoordeeld.
-"""
+            html_body = f"""<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1815">
+  <div style="border-bottom:2px solid #c8a951;padding-bottom:12px;margin-bottom:24px">
+    <span style="font-size:22px;font-weight:700;letter-spacing:-0.02em">Juriva</span>
+  </div>
+  <p>Beste,</p>
+  <p>Bedankt voor uw aankoop van <strong>Juriva {plan}</strong>.</p>
+  <p>Uw toegangscode is:</p>
+  <div style="background:#f5f3ef;border:1px solid #e0dbd2;border-radius:8px;padding:16px 24px;margin:20px 0;text-align:center">
+    <span style="font-size:22px;font-weight:700;letter-spacing:0.08em;color:#1a1815">{code}</span>
+  </div>
+  <p><a href="https://juriva.nl" style="background:#c8a951;color:#fff;padding:10px 22px;border-radius:6px;text-decoration:none;font-weight:600">Ga naar juriva.nl →</a></p>
+  <p style="margin-top:24px">Heeft u vragen? Stuur een e-mail naar <a href="mailto:info@juriva.nl">info@juriva.nl</a> — wij reageren binnen 1 werkdag.</p>
+  <p>Met vriendelijke groet,<br><strong>Florean Drevel</strong><br>Juriva · juriva.nl</p>
+  <p style="font-size:11px;color:#999;margin-top:32px;border-top:1px solid #eee;padding-top:12px">Juriva levert geen juridisch advies. Contracten dienen altijd door een bevoegde advocaat te worden beoordeeld.</p>
+</div>"""
         else:
             subject = f"Your Juriva access code — {plan}"
-            body = f"""Hello,
+            html_body = f"""<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1815">
+  <div style="border-bottom:2px solid #c8a951;padding-bottom:12px;margin-bottom:24px">
+    <span style="font-size:22px;font-weight:700;letter-spacing:-0.02em">Juriva</span>
+  </div>
+  <p>Hello,</p>
+  <p>Thank you for purchasing <strong>Juriva {plan}</strong>.</p>
+  <p>Your access code is:</p>
+  <div style="background:#f5f3ef;border:1px solid #e0dbd2;border-radius:8px;padding:16px 24px;margin:20px 0;text-align:center">
+    <span style="font-size:22px;font-weight:700;letter-spacing:0.08em;color:#1a1815">{code}</span>
+  </div>
+  <p><a href="https://juriva.nl" style="background:#c8a951;color:#fff;padding:10px 22px;border-radius:6px;text-decoration:none;font-weight:600">Go to juriva.nl →</a></p>
+  <p style="margin-top:24px">Questions? Email <a href="mailto:info@juriva.nl">info@juriva.nl</a> — we respond within 1 business day.</p>
+  <p>Kind regards,<br><strong>Florean Drevel</strong><br>Juriva · juriva.nl</p>
+  <p style="font-size:11px;color:#999;margin-top:32px;border-top:1px solid #eee;padding-top:12px">Juriva does not provide legal advice. Contracts should always be reviewed by a qualified lawyer.</p>
+</div>"""
 
-Thank you for purchasing Juriva {plan}.
+        payload = json.dumps({
+            "from": "Juriva <info@juriva.nl>",
+            "to": [to_email],
+            "subject": subject,
+            "html": html_body
+        }).encode('utf-8')
 
-Your access code is:
-
-    {code}
-
-Go to https://juriva.nl and enter this code to get started immediately.
-
-Questions? Email info.juriva@gmail.com — we respond within 1 business day.
-
-Kind regards,
-Florean Drevel
-Juriva · juriva.nl
-
----
-Juriva does not provide legal advice. Contracts should always be reviewed by a qualified lawyer.
-"""
-        msg = MIMEMultipart()
-        msg['From'] = f"Juriva <{GMAIL_FROM}>"
-        msg['To'] = to_email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
-
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10) as server:
-            server.login(GMAIL_FROM, GMAIL_APP_PASSWORD)
-            server.send_message(msg)
-        print(f"[EMAIL OK] Sent code {code} to {to_email}", flush=True)
-        return True
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=payload,
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            result = json.loads(resp.read().decode())
+            print(f"[EMAIL OK] Sent to {to_email} — id: {result.get('id')}", flush=True)
+            return True
     except Exception as e:
         print(f"[EMAIL ERROR] {e}", flush=True)
+        import traceback; traceback.print_exc()
         return False
 
 # ─────────────────────────────────────────
