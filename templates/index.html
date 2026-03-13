@@ -82,6 +82,21 @@
         .gate-error { font-size: 13px; color: var(--red); align-self: flex-start; display: none; line-height: 1.6; }
         .gate-contact { font-size: 13px; color: var(--muted); text-align: center; line-height: 1.8; }
         .gate-contact a { color: var(--accent); text-decoration: none; }
+        .gate-divider { display: flex; align-items: center; gap: 12px; width: 100%; margin: 4px 0; }
+        .gate-divider-line { flex: 1; height: 1px; background: var(--border); }
+        .gate-divider-text { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+        .demo-btn { width: 100%; background: transparent; border: 1px solid var(--border); border-radius: 6px;
+            color: var(--text); font-size: 13px; padding: 10px 16px; cursor: pointer; transition: all 0.2s;
+            letter-spacing: 0.03em; }
+        .demo-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .demo-badge { display: inline-block; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+            background: var(--accent); color: var(--bg); border-radius: 3px; padding: 2px 6px;
+            margin-left: 8px; font-weight: 700; vertical-align: middle; }
+        .demo-banner { background: linear-gradient(135deg, rgba(200,169,81,0.12), rgba(200,169,81,0.06));
+            border: 1px solid rgba(200,169,81,0.3); border-radius: 8px; padding: 12px 16px;
+            font-size: 13px; color: var(--muted); line-height: 1.6; text-align: center; margin-bottom: 16px; }
+        .demo-banner strong { color: var(--accent); }
+        .demo-banner a { color: var(--accent); text-decoration: none; font-weight: 600; }
         /* TERMS MODAL */
         #termsModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
             z-index: 200; align-items: center; justify-content: center; padding: 24px; }
@@ -246,6 +261,18 @@
     <div class="gate-box">
         <div class="gate-logo">Juriva</div>
         <div class="gate-tagline" id="gateTagline">A second pair of eyes that never gets tired.</div>
+
+        <!-- DEMO BUTTON — top, prominent -->
+        <button class="demo-btn" onclick="startDemo()" id="demoBtnTop">
+            Probeer gratis demo <span class="demo-badge">Live</span>
+        </button>
+
+        <div class="gate-divider">
+            <div class="gate-divider-line"></div>
+            <div class="gate-divider-text" id="gateDividerText">of gebruik toegangscode</div>
+            <div class="gate-divider-line"></div>
+        </div>
+
         <div class="gate-label" id="gateLabel">Toegangscode</div>
         <div class="gate-input-row">
             <input class="gate-input" id="codeInput" type="text" placeholder="JURIVA-XXXX" autocomplete="off" spellcheck="false">
@@ -287,6 +314,13 @@
         <div class="privacy-badge">
             <div class="privacy-dot"></div>
             <span id="privacyBadge">Documenten worden nooit opgeslagen — verwerking in geheugen, direct gewist na analyse</span>
+        </div>
+
+        <!-- DEMO MODE BANNER — hidden by default, shown in demo mode -->
+        <div id="demoBanner" class="demo-banner" style="display:none;">
+            🔍 <strong>Live demo</strong> — dit is een voorbeeldcontract (NexusCloud PSA, risicoscore 9/10).
+            Wil je je eigen contract analyseren?
+            <a href="mailto:info.juriva@gmail.com?subject=Toegangscode aanvragen">Vraag een gratis 14-daagse toegangscode aan →</a>
         </div>
 
         <div class="upload-section">
@@ -578,6 +612,7 @@ const T = {
         gateContact:'Geen toegangscode? Vraag een gratis pilot aan.',
         gateErrorInvalid:'Ongeldige toegangscode. Probeer opnieuw.',
         gateErrorExpired:'Uw toegang is verlopen. Neem contact op via info.juriva@gmail.com voor een abonnement.',
+        gateDividerText:'of gebruik toegangscode', demoBtnText:'Probeer gratis demo',
         privacyBadge:'Documenten worden nooit opgeslagen \u2014 verwerking in geheugen, direct gewist na analyse',
         labelContract:'Contract', badgeRequired:'Verplicht', labelPlaybook:'Playbook / Gouden Standaard',
         badgeOptional1:'Optioneel', labelSecondDoc:'Tweede Document', badgeOptional2:'Optioneel',
@@ -602,6 +637,7 @@ const T = {
         gateContact:'No access code? Request a free pilot.',
         gateErrorInvalid:'Invalid access code. Please try again.',
         gateErrorExpired:'Your access has expired. Contact us at info.juriva@gmail.com to subscribe.',
+        gateDividerText:'or use access code', demoBtnText:'Try free demo',
         privacyBadge:'Documents are never stored \u2014 processed in memory, deleted immediately after analysis',
         labelContract:'Contract', badgeRequired:'Required', labelPlaybook:'Playbook / Gold Standard',
         badgeOptional1:'Optional', labelSecondDoc:'Second Document', badgeOptional2:'Optional',
@@ -635,6 +671,92 @@ window.addEventListener('load', async () => {
 });
 
 // GATE
+// DEMO MODE
+let isDemoMode = false;
+
+async function startDemo() {
+    isDemoMode = true;
+    // Skip auth — go straight to app, show demo banner
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('termsModal').classList.remove('visible');
+    const app = document.getElementById('appWrapper');
+    app.style.display = 'flex';
+    document.getElementById('demoBanner').style.display = 'block';
+    renderFooterTC();
+    // Auto-run the demo analysis after a short delay
+    setTimeout(runDemo, 400);
+}
+
+async function runDemo() {
+    const btn = document.getElementById('analyzeBtn');
+    const statusEl = document.getElementById('statusText');
+    const resultEl = document.getElementById('resultSection');
+    const t = T[currentLang];
+
+    btn.disabled = true;
+    statusEl.textContent = currentLang === 'nl' ? 'Demo wordt geladen...' : 'Loading demo...';
+    resultEl.style.display = 'none';
+    document.getElementById('analysisOutput').innerHTML = '';
+    resetCards();
+
+    try {
+        const res = await fetch('/api/demo', { method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({lang: currentLang})
+        });
+
+        if (!res.ok) { throw new Error('Demo failed'); }
+
+        resultEl.style.display = 'block';
+        statusEl.textContent = currentLang === 'nl' ? 'Analyseren...' : 'Analysing...';
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '', fullText = '';
+
+        while (true) {
+            const {done, value} = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, {stream: true});
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const payload = line.slice(6).trim();
+                if (payload === '[DONE]') {
+                    document.getElementById('analysisOutput').innerHTML = formatAnalysisHTML(fullText);
+                    updateCards(fullText);
+                    statusEl.textContent = currentLang === 'nl' ? 'Demo analyse voltooid' : 'Demo analysis complete';
+                    btn.disabled = false;
+                    // Show upgrade CTA after demo completes
+                    showDemoCTA();
+                    return;
+                }
+                try {
+                    const d = JSON.parse(payload);
+                    if (d.token) { fullText += d.token; renderStreaming(fullText); }
+                    if (d.error) throw new Error(d.error);
+                } catch(e) {}
+            }
+        }
+    } catch(e) {
+        statusEl.textContent = 'Demo kon niet worden geladen.';
+        btn.disabled = false;
+    }
+}
+
+function showDemoCTA() {
+    // Replace demo banner with stronger CTA after analysis
+    const banner = document.getElementById('demoBanner');
+    banner.innerHTML = `
+        ✅ <strong>Demo voltooid.</strong> Dit is wat Juriva doet met <em>elk</em> contract in 30 seconden.<br>
+        <a href="mailto:info.juriva@gmail.com?subject=Toegangscode aanvragen – Juriva" style="font-weight:700;">
+        → Vraag een gratis 14-daagse toegangscode aan</a>
+        &nbsp;·&nbsp;
+        <a href="/pricing" style="font-weight:700;">Bekijk abonnementen</a>
+    `;
+}
+
 async function submitCode() {
     const code = document.getElementById('codeInput').value.trim();
     const btn = document.getElementById('codeBtn');
@@ -718,6 +840,8 @@ function setLang(lang) {
     document.getElementById('codeInput').placeholder = t.gatePlaceholder;
     document.getElementById('codeBtn').textContent = t.gateBtnText;
     document.getElementById('gateContact').innerHTML = t.gateContact + '<br><a href="mailto:info.juriva@gmail.com">info.juriva@gmail.com</a>';
+    document.getElementById('gateDividerText').textContent = t.gateDividerText;
+    document.getElementById('demoBtnTop').innerHTML = t.demoBtnText + ' <span class="demo-badge">Live</span>';
     document.getElementById('tcToggleLabel').textContent = tcOpen ? t.tcToggleLabelClose : t.tcToggleLabel;
     document.getElementById('btnNL').classList.toggle('active', lang === 'nl');
     document.getElementById('btnEN').classList.toggle('active', lang === 'en');
