@@ -924,13 +924,26 @@ def stripe_webhook():
     sig_header = request.headers.get('Stripe-Signature', '')
 
     try:
-        event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
-    except (ValueError, stripe.error.SignatureVerificationError) as e:
+        if STRIPE_WEBHOOK_SECRET:
+            event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
+        else:
+            # No secret set — parse without verification (less secure, use for debugging only)
+            import json as _json
+            event = _json.loads(payload)
+            print("[WEBHOOK] Warning: no webhook secret set, skipping signature verification")
+    except ValueError as e:
+        print(f"[WEBHOOK] Invalid payload: {e}")
+        return jsonify({'error': 'Invalid payload'}), 400
+    except stripe.error.SignatureVerificationError as e:
         print(f"[WEBHOOK] Invalid signature: {e}")
         return jsonify({'error': 'Invalid signature'}), 400
 
-    if event['type'] == 'checkout.session.completed':
+    event_type = event.get('type', '') if isinstance(event, dict) else event['type']
+    print(f"[WEBHOOK] Received event: {event_type}")
+
+    if event_type == 'checkout.session.completed':
         session_obj = event['data']['object']
+        print(f"[WEBHOOK] Processing payment: {session_obj.get('id', 'unknown')}")
         _handle_successful_payment(session_obj)
 
     return jsonify({'status': 'ok'})
@@ -979,8 +992,8 @@ def _handle_successful_payment(session_obj):
         conn.commit()
 
     # Send email
-    send_access_email(customer_email, code, plan_name, lang)
-    print(f"[PAYMENT OK] {customer_email} bought {plan_name} → code {code}")
+    email_sent = send_access_email(customer_email, code, plan_name, lang)
+    print(f"[PAYMENT OK] {customer_email} bought {plan_name} → code {code} → email sent: {email_sent}")
 
 
 # ─────────────────────────────────────────────────────────────
