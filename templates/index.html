@@ -718,7 +718,7 @@ async function startDemo() {
         if (nameEl) nameEl.textContent = 'NexusCloud_PSA_Demo.pdf';
         if (sizeEl) sizeEl.textContent = currentLang === 'nl' ? 'Demo contract — hoog risico' : 'Demo contract — high risk';
     }
-    document.getElementById('analyseBtn').disabled = false;
+    document.getElementById('analyseBtn').style.display = 'none';
     renderFooterTC();
     setTimeout(runDemo, 400);
 }
@@ -733,7 +733,7 @@ async function runDemo() {
     const bodyEl     = document.getElementById('analysisBody');
 
     // Reset UI
-    analyseBtn.disabled = true;
+    analyseBtn.style.display = 'none';
     statusDiv.style.display = 'block';
     resultsDiv.style.display = 'none';
     downloadRow.style.display = 'none';
@@ -798,20 +798,10 @@ async function runDemo() {
 }
 
 function lockDemoUploads() {
-    // Hide upload inputs in demo mode — show a CTA instead
-    var uploadArea = document.getElementById('uploadArea');
-    var playbookArea = document.getElementById('playbookArea');
-    var secondDocArea = document.getElementById('secondDocArea');
     var analyseBtn = document.getElementById('analyseBtn');
     var counter = document.getElementById('analysesCounter');
     var limitBox = document.getElementById('limitReachedBox');
-
-    if (uploadArea) uploadArea.style.pointerEvents = 'none';
-    if (playbookArea) playbookArea.style.pointerEvents = 'none';
-    if (secondDocArea) secondDocArea.style.pointerEvents = 'none';
     if (counter) counter.style.display = 'none';
-
-    // Replace button with upgrade prompt
     analyseBtn.style.display = 'none';
     if (limitBox) {
         limitBox.style.display = 'block';
@@ -1115,7 +1105,7 @@ function renderAnalysis(text, filename) {
 // ── ANALYSE BUTTON — streaming ──
 document.getElementById('analyseBtn').addEventListener('click', async () => {
     // In demo mode, run demo instead of uploading
-    if (isDemoMode) { runDemo(); return; }
+    if (isDemoMode) { document.getElementById('analyseBtn').style.display = 'none'; runDemo(); return; }
     const t = T[currentLang];
     document.getElementById('status').style.display = 'block';
     document.getElementById('results').style.display = 'none';
