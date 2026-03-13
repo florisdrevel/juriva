@@ -14,7 +14,7 @@ from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-ADMIN-SECRET"
+app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-FLASK-SECRET"
 
 # ─────────────────────────────────────────
 # PASTE YOUR ANTHROPIC API KEY HERE
@@ -784,3 +784,4 @@ def pricing():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
