@@ -225,10 +225,10 @@
 
 <footer>
     <span>© 2025 Juriva · juriva.nl</span>
-    <a href="mailto:info.juriva@gmail.com">info.juriva@gmail.com</a>
+    <a href="/cdn-cgi/l/email-protection#2d44434b420347585f445b4c6d4a404c4441034e4240"><span class="__cf_email__" data-cfemail="6900070f0647031c1b001f08290e04080005470a0604">[email&#160;protected]</span></a>
 </footer>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ── THEME ──
 let currentTheme = localStorage.getItem('juriva-theme') || 'dark';
 function applyTheme(t) {
@@ -372,6 +372,7 @@ function renderCards() {
         }).join('');
         const isFeatured = i === 2;
         const btnClass = isFeatured ? 'solid' : 'outline';
+        const planKey = (isAnnual && planKeysAnnual[i]) ? planKeysAnnual[i] : planKeys[i];
         document.getElementById('card' + i).innerHTML = `
             ${isFeatured ? `<div class="feat-pill">${t.featPill}</div>` : ''}
             <div class="plan-tier">${t.tiers[i]}</div>
@@ -384,7 +385,7 @@ function renderCards() {
             </div>
             <div class="plan-div"></div>
             <ul class="plan-feats">${featsList}</ul>
-            <a href="mailto:info.juriva@gmail.com?subject=${encodeURIComponent(mailSubjects[i])}" class="plan-btn ${btnClass}">${t.btns[i]}</a>
+            <button onclick="startCheckout('${planKey}')" class="plan-btn ${btnClass}">${t.btns[i]}</button>
         `;
     }
 }
@@ -424,14 +425,4 @@ function renderAll() {
 
 function setLang(lang) {
     currentLang = lang;
-    localStorage.setItem('juriva-lang', lang);
-    document.getElementById('btnNL').classList.toggle('active', lang === 'nl');
-    document.getElementById('btnEN').classList.toggle('active', lang === 'en');
-    renderAll();
-}
-
-// Init
-renderAll();
-</script>
-</body>
-</html>
+    localStorage.setItem('j
