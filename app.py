@@ -124,9 +124,11 @@ def init_db():
 
 try:
     init_db()
-    print(f"[DB] Initialised at {DB_PATH}")
+    print(f"[DB] Initialised at {DB_PATH}", flush=True)
 except Exception as e:
-    print(f"[DB ERROR] Could not init DB: {e}")
+    print(f"[DB ERROR] Could not init DB: {e}", flush=True)
+
+print(f"[APP] Flask ready — Stripe: {STRIPE_AVAILABLE}, Gmail: {bool(GMAIL_APP_PASSWORD)}", flush=True)
 
 # ─────────────────────────────────────────────────────────────
 # CODE HELPERS
@@ -920,8 +922,10 @@ def create_checkout_session():
 
 @app.route('/webhook', methods=['POST'])
 def stripe_webhook():
+    print("[WEBHOOK] ENTERING ROUTE", flush=True)
+    import sys; sys.stdout.flush()
     import json as _json, traceback as _tb
-    print("[WEBHOOK] Request received")
+    print("[WEBHOOK] Request received", flush=True)
     try:
         payload = request.get_data()
         print(f"[WEBHOOK] Payload length: {len(payload)}")
