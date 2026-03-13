@@ -1223,6 +1223,23 @@ def admin_insert_code(secret, code, plan):
     return f"<h2>✓ Code inserted</h2><p>Code: <strong>{code}</strong><br>Plan: <strong>{plan}</strong></p>"
 
 
+@app.route('/admin/insert-test-code/<secret>/<code>/<plan>')
+def admin_insert_test_code(secret, code, plan):
+    """Insert a test code with 2-minute expiry for testing."""
+    if secret != (os.environ.get('SECRET_KEY') or 'REDACTED-ADMIN-SECRET'):
+        return "Unauthorized", 401
+    is_sub = 0 if plan == 'Per Analyse' else 1
+    sub_end = (datetime.now() + timedelta(minutes=2)).isoformat() if plan not in ('Per Analyse', 'Pilot') else None
+    max_u = 10 if plan == 'Kantoor' else (3 if plan == 'Professioneel' else 1)
+    with get_db() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO codes (code, plan, email, created_at, is_subscription, analyse_count, subscription_end, max_users) VALUES (?, ?, ?, ?, ?, 0, ?, ?)",
+            (code, plan, 'test@juriva.nl', datetime.now().isoformat(), is_sub, sub_end, max_u)
+        )
+        conn.commit()
+    return f"<h2>✓ Test code inserted (2-min expiry)</h2><p>Code: <strong>{code}</strong><br>Plan: <strong>{plan}</strong><br>Expires: <strong>{sub_end}</strong></p>"
+
+
 @app.route('/admin/clear-test-codes/<secret>')
 def admin_clear_test_codes(secret):
     """Delete all test codes (email = test@juriva.nl)."""
