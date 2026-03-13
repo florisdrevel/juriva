@@ -98,11 +98,11 @@ def init_db():
         conn.commit()
         # Seed pilot codes if not present
         pilot_codes = [
-            ("JURIVA-PILOT-11", "pilot"), ("JURIVA-PILOT-21", "pilot"),
-            ("JURIVA-PILOT-31", "pilot"), ("JURIVA-PILOT-41", "pilot"),
-            ("JURIVA-PILOT-51", "pilot"), ("JURIVA-PILOT-61", "pilot"),
-            ("JURIVA-PILOT-71", "pilot"), ("JURIVA-PILOT-81", "pilot"),
-            ("JURIVA-PILOT-91", "pilot"), ("JURIVA-PILOT-101", "pilot"),
+            ("JURIVA-PILOT-1", "pilot"), ("JURIVA-PILOT-2", "pilot"),
+            ("JURIVA-PILOT-3", "pilot"), ("JURIVA-PILOT-4", "pilot"),
+            ("JURIVA-PILOT-5", "pilot"), ("JURIVA-PILOT-6", "pilot"),
+            ("JURIVA-PILOT-7", "pilot"), ("JURIVA-PILOT-8", "pilot"),
+            ("JURIVA-PILOT-9", "pilot"), ("JURIVA-PILOT-10", "pilot"),
         ]
         for code, plan in pilot_codes:
             conn.execute(
@@ -1143,6 +1143,20 @@ def admin_clear_session(secret, session_id):
     return f"<h2>✓ Session cleared</h2><p>Resend the webhook from Stripe now.</p>"
 
 
+@app.route('/admin/insert-code/<secret>/<code>/<plan>')
+def admin_insert_code(secret, code, plan):
+    """Insert a test code directly into the DB."""
+    if secret != (os.environ.get('SECRET_KEY') or 'REDACTED-ADMIN-SECRET'):
+        return "Unauthorized", 401
+    is_sub = 0 if plan == 'Per Analyse' else 1
+    with get_db() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO codes (code, plan, email, created_at, is_subscription, analyse_count) VALUES (?, ?, ?, ?, ?, 0)",
+            (code, plan, 'test@juriva.nl', datetime.now().isoformat(), is_sub)
+        )
+        conn.commit()
+    return f"<h2>✓ Code inserted</h2><p>Code: <strong>{code}</strong><br>Plan: <strong>{plan}</strong></p>"
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
