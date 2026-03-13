@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juriva — Abonnementen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+        --bg: #0f0e0c;
+        --surface: #1a1815;
+        --border: rgba(200,169,81,0.15);
+        --text: #f0ebe3;
+        --muted: #8a7e70;
+        --accent: #c8a951;
+        --red: #e05555;
+        --green: #4caf80;
+    }
+
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif;
+        min-height: 100vh; padding: 0; }
+
+    /* NAV */
+    nav { display: flex; align-items: center; justify-content: space-between;
+        padding: 20px 48px; border-bottom: 1px solid var(--border); }
+    .nav-logo { font-family: 'Instrument Serif', serif; font-size: 28px; color: var(--text);
+        text-decoration: none; }
+    .nav-links { display: flex; gap: 24px; align-items: center; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 14px;
+        transition: color 0.2s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-demo-btn { background: var(--accent); color: var(--bg) !important;
+        padding: 8px 18px; border-radius: 6px; font-weight: 600 !important; }
+    .nav-demo-btn:hover { opacity: 0.88; }
+
+    /* HERO */
+    .hero { text-align: center; padding: 80px 24px 56px; max-width: 720px; margin: 0 auto; }
+    .hero-label { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+        color: var(--accent); margin-bottom: 16px; }
+    .hero h1 { font-family: 'Instrument Serif', serif; font-size: clamp(36px, 5vw, 52px);
+        line-height: 1.15; color: var(--text); margin-bottom: 16px; }
+    .hero p { font-size: 17px; color: var(--muted); line-height: 1.7; max-width: 520px;
+        margin: 0 auto 32px; }
+    .demo-link { font-size: 14px; color: var(--accent); text-decoration: none;
+        border-bottom: 1px solid rgba(200,169,81,0.3); padding-bottom: 1px; }
+    .demo-link:hover { border-color: var(--accent); }
+
+    /* TOGGLE */
+    .billing-toggle { display: flex; align-items: center; justify-content: center;
+        gap: 12px; margin-bottom: 48px; }
+    .toggle-label { font-size: 14px; color: var(--muted); cursor: pointer; transition: color 0.2s; }
+    .toggle-label.active { color: var(--text); }
+    .toggle-track { width: 44px; height: 24px; background: var(--surface);
+        border: 1px solid var(--border); border-radius: 12px; cursor: pointer;
+        position: relative; transition: background 0.2s; }
+    .toggle-track.annual { background: rgba(200,169,81,0.2); border-color: var(--accent); }
+    .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
+        background: var(--muted); border-radius: 50%; transition: all 0.2s; }
+    .toggle-track.annual .toggle-thumb { left: calc(100% - 19px); background: var(--accent); }
+    .save-badge { background: rgba(76,175,128,0.15); color: var(--green);
+        font-size: 11px; letter-spacing: 0.06em; font-weight: 600; padding: 3px 8px;
+        border-radius: 20px; border: 1px solid rgba(76,175,128,0.3); }
+
+    /* CARDS */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 20px; max-width: 1100px; margin: 0 auto; padding: 0 24px 80px; }
+
+    .card { background: var(--surface); border: 1px solid var(--border);
+        border-radius: 12px; padding: 32px 28px; display: flex;
+        flex-direction: column; position: relative; transition: border-color 0.2s; }
+    .card:hover { border-color: rgba(200,169,81,0.3); }
+    .card.featured { border-color: var(--accent);
+        background: linear-gradient(135deg, rgba(200,169,81,0.06), var(--surface)); }
+    .featured-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+        background: var(--accent); color: var(--bg); font-size: 11px; font-weight: 700;
+        letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 14px;
+        border-radius: 20px; white-space: nowrap; }
+
+    .card-tier { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+        color: var(--accent); margin-bottom: 10px; }
+    .card-name { font-family: 'Instrument Serif', serif; font-size: 24px;
+        color: var(--text); margin-bottom: 8px; }
+    .card-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+
+    .card-price { margin-bottom: 24px; }
+    .price-amount { font-size: 40px; font-weight: 600; color: var(--text); line-height: 1; }
+    .price-amount sup { font-size: 18px; vertical-align: super; }
+    .price-period { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .price-annual { font-size: 12px; color: var(--green); margin-top: 3px; }
+    .price-original { font-size: 13px; color: var(--muted); text-decoration: line-through; }
+
+    .card-divider { height: 1px; background: var(--border); margin-bottom: 20px; }
+
+    .card-features { list-style: none; flex: 1; margin-bottom: 28px; }
+    .card-features li { display: flex; gap: 10px; font-size: 13.5px; color: var(--muted);
+        line-height: 1.5; margin-bottom: 10px; }
+    .card-features li::before { content: '✓'; color: var(--accent); font-weight: 700;
+        flex-shrink: 0; margin-top: 1px; }
+    .card-features li.dim::before { color: var(--muted); content: '–'; }
+    .card-features li strong { color: var(--text); }
+
+    .card-btn { width: 100%; padding: 12px; border-radius: 8px; font-size: 14px;
+        font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center;
+        text-decoration: none; display: block; letter-spacing: 0.02em; }
+    .card-btn.primary { background: var(--accent); color: var(--bg); border: none; }
+    .card-btn.primary:hover { opacity: 0.88; }
+    .card-btn.secondary { background: transparent; color: var(--text);
+        border: 1px solid var(--border); }
+    .card-btn.secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* COMPARE */
+    .compare-section { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
+    .compare-section h2 { font-family: 'Instrument Serif', serif; font-size: 28px;
+        color: var(--text); text-align: center; margin-bottom: 40px; }
+    .compare-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .compare-table th { text-align: center; padding: 12px 16px; color: var(--muted);
+        font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+        border-bottom: 1px solid var(--border); }
+    .compare-table th:first-child { text-align: left; }
+    .compare-table td { padding: 14px 16px; border-bottom: 1px solid rgba(200,169,81,0.06);
+        color: var(--muted); text-align: center; }
+    .compare-table td:first-child { text-align: left; color: var(--text); font-size: 13.5px; }
+    .compare-table tr:hover td { background: rgba(200,169,81,0.03); }
+    .check { color: var(--accent); font-size: 16px; }
+    .cross { color: rgba(255,255,255,0.15); }
+    .col-featured { background: rgba(200,169,81,0.04); }
+
+    /* FAQ */
+    .faq-section { max-width: 680px; margin: 0 auto; padding: 0 24px 100px; }
+    .faq-section h2 { font-family: 'Instrument Serif', serif; font-size: 28px;
+        color: var(--text); text-align: center; margin-bottom: 40px; }
+    .faq-item { border-bottom: 1px solid var(--border); padding: 20px 0; }
+    .faq-q { font-size: 15px; color: var(--text); font-weight: 500; margin-bottom: 10px; }
+    .faq-a { font-size: 14px; color: var(--muted); line-height: 1.7; }
+    .faq-a a { color: var(--accent); }
+
+    /* CTA BANNER */
+    .cta-banner { background: linear-gradient(135deg, rgba(200,169,81,0.1), rgba(200,169,81,0.04));
+        border: 1px solid rgba(200,169,81,0.2); border-radius: 12px;
+        max-width: 680px; margin: 0 auto 80px; padding: 40px 48px; text-align: center; }
+    .cta-banner h3 { font-family: 'Instrument Serif', serif; font-size: 28px;
+        color: var(--text); margin-bottom: 12px; }
+    .cta-banner p { font-size: 15px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+    .cta-banner a { display: inline-block; background: var(--accent); color: var(--bg);
+        padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 14px;
+        text-decoration: none; transition: opacity 0.2s; }
+    .cta-banner a:hover { opacity: 0.88; }
+
+    /* FOOTER */
+    footer { border-top: 1px solid var(--border); padding: 24px 48px;
+        display: flex; justify-content: space-between; align-items: center; }
+    footer span { font-size: 13px; color: var(--muted); }
+    footer a { font-size: 13px; color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--accent); }
+
+    @media (max-width: 640px) {
+        nav { padding: 16px 20px; }
+        .cards { grid-template-columns: 1fr; }
+        .cta-banner { padding: 28px 24px; }
+        footer { flex-direction: column; gap: 12px; text-align: center; }
+    }
+</style>
+</head>
+<body>
+
+<nav>
+    <a href="/" class="nav-logo">Juriva</a>
+    <div class="nav-links">
+        <a href="/">Tool</a>
+        <a href="/pricing">Abonnementen</a>
+        <a href="/" class="nav-demo-btn">Probeer demo →</a>
+    </div>
+</nav>
+
+<div class="hero">
+    <div class="hero-label">Abonnementen</div>
+    <h1>Contractrisico's zien<br>voordat u tekent</h1>
+    <p>Juriva analyseert elk contract in 30 seconden. Risicoscore, top 3 risico's, ongebruikelijke clausules, concrete acties. In duidelijk Nederlands.</p>
+    <a href="/" class="demo-link">Bekijk live demo met een echt risicocontract →</a>
+</div>
+
+<div class="billing-toggle">
+    <span class="toggle-label active" id="toggleMonthLabel">Per maand</span>
+    <div class="toggle-track" id="billingToggle" onclick="toggleBilling()">
+        <div class="toggle-thumb"></div>
+    </div>
+    <span class="toggle-label" id="toggleAnnualLabel">Jaarlijks</span>
+    <span class="save-badge">2 maanden gratis</span>
+</div>
+
+<div class="cards">
+
+    <!-- PER ANALYSE -->
+    <div class="card">
+        <div class="card-tier">Eenmalig</div>
+        <div class="card-name">Per Analyse</div>
+        <div class="card-desc">Voor thuiskopers, ZZP'ers en werknemers die één contract willen laten checken.</div>
+        <div class="card-price">
+            <div class="price-amount"><sup>€</sup><span class="monthly-price">9</span></div>
+            <div class="price-period">per analyse</div>
+        </div>
+        <div class="card-divider"></div>
+        <ul class="card-features">
+            <li><strong>1 contractanalyse</strong></li>
+            <li>Risicoscore + top 3 risico's</li>
+            <li>Ongebruikelijke clausules</li>
+            <li>Download als .docx rapport</li>
+            <li class="dim">Playbook vergelijking</li>
+            <li class="dim">Meerdere documenten</li>
+            <li class="dim">Onbeperkt gebruik</li>
+        </ul>
+        <a href="mailto:info.juriva@gmail.com?subject=Per analyse – Juriva" class="card-btn secondary">Aanvragen</a>
+    </div>
+
+    <!-- ZZP -->
+    <div class="card">
+        <div class="card-tier">ZZP & Freelance</div>
+        <div class="card-name">ZZP Plan</div>
+        <div class="card-desc">Voor freelancers en ZZP'ers die regelmatig opdrachtovereenkomsten tekenen.</div>
+        <div class="card-price">
+            <div class="price-amount"><sup>€</sup><span class="monthly-price" data-monthly="29" data-annual="24">29</span></div>
+            <div class="price-period">per maand</div>
+            <div class="price-annual" id="zzp-annual" style="display:none;">€290/jaar — 2 maanden gratis</div>
+        </div>
+        <div class="card-divider"></div>
+        <ul class="card-features">
+            <li><strong>Onbeperkte analyses</strong></li>
+            <li>Risicoscore + top 3 risico's</li>
+            <li>Ongebruikelijke clausules</li>
+            <li>Download als .docx rapport</li>
+            <li>NL + EN taal</li>
+            <li class="dim">Playbook vergelijking</li>
+            <li class="dim">Multi-document analyse</li>
+        </ul>
+        <a href="mailto:info.juriva@gmail.com?subject=ZZP Plan – Juriva" class="card-btn secondary">Aanvragen</a>
+    </div>
+
+    <!-- PROFESSIONEEL — FEATURED -->
+    <div class="card featured">
+        <div class="featured-badge">Meest gekozen</div>
+        <div class="card-tier">Kleine kantoren & adviseurs</div>
+        <div class="card-name">Professioneel</div>
+        <div class="card-desc">Voor recruiters, makelaars, notarissen en kleine advocatenkantoren.</div>
+        <div class="card-price">
+            <div class="price-amount"><sup>€</sup><span class="monthly-price" data-monthly="99" data-annual="82">99</span></div>
+            <div class="price-period">per maand</div>
+            <div class="price-annual" id="pro-annual" style="display:none;">€990/jaar — 2 maanden gratis</div>
+        </div>
+        <div class="card-divider"></div>
+        <ul class="card-features">
+            <li><strong>Onbeperkte analyses</strong></li>
+            <li>Risicoscore + top 3 risico's</li>
+            <li>Ongebruikelijke clausules</li>
+            <li>Download als .docx rapport</li>
+            <li><strong>Playbook vergelijking</strong></li>
+            <li><strong>Multi-document analyse</strong></li>
+            <li>NL + EN taal</li>
+        </ul>
+        <a href="mailto:info.juriva@gmail.com?subject=Professioneel Plan – Juriva" class="card-btn primary">Aanvragen</a>
+    </div>
+
+    <!-- KANTOOR -->
+    <div class="card">
+        <div class="card-tier">Advocatenkantoren</div>
+        <div class="card-name">Kantoor</div>
+        <div class="card-desc">Voor advocatenkantoren en juridische afdelingen van corporates.</div>
+        <div class="card-price">
+            <div class="price-amount"><sup>€</sup><span class="monthly-price" data-monthly="299" data-annual="249">299</span></div>
+            <div class="price-period">per maand</div>
+            <div class="price-annual" id="kantoor-annual" style="display:none;">€2.990/jaar — 2 maanden gratis</div>
+        </div>
+        <div class="card-divider"></div>
+        <ul class="card-features">
+            <li><strong>Onbeperkte analyses</strong></li>
+            <li>Risicoscore + top 3 risico's</li>
+            <li>Ongebruikelijke clausules</li>
+            <li>Download als .docx rapport</li>
+            <li><strong>Playbook vergelijking</strong></li>
+            <li><strong>Multi-document analyse</strong></li>
+            <li><strong>Tot 5 gebruikers</strong></li>
+            <li>Prioriteit support</li>
+        </ul>
+        <a href="mailto:info.juriva@gmail.com?subject=Kantoor Plan – Juriva" class="card-btn secondary">Aanvragen</a>
+    </div>
+
+</div>
+
+<!-- COMPARISON TABLE -->
+<div class="compare-section">
+    <h2>Vergelijking</h2>
+    <table class="compare-table">
+        <thead>
+            <tr>
+                <th>Functie</th>
+                <th>Per Analyse</th>
+                <th>ZZP</th>
+                <th class="col-featured">Professioneel</th>
+                <th>Kantoor</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Risicoscore (1–10)</td>
+                <td><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+                <td class="col-featured"><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+                <td>Top 3 risico's met artikelverwijzing</td>
+                <td><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+                <td class="col-featured"><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+                <td>Ongebruikelijke clausules</td>
+                <td><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+                <td class="col-featured"><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+                <td>Download .docx rapport</td>
+                <td><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+                <td class="col-featured"><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+                <td>NL + EN analyse</td>
+                <td><span class="cross">–</span></td>
+                <td><span class="check">✓</span></td>
+                <td class="col-featured"><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+                <td>Playbook vergelijking</td>
+                <td><span class="cross">–</span></td>
+                <td><span class="cross">–</span></td>
+                <td class="col-featured"><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+                <td>Multi-document kruisverwijzing</td>
+                <td><span class="cross">–</span></td>
+                <td><span class="cross">–</span></td>
+                <td class="col-featured"><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+                <td>Aantal gebruikers</td>
+                <td>1</td>
+                <td>1</td>
+                <td class="col-featured">1</td>
+                <td><strong style="color:var(--text)">Tot 5</strong></td>
+            </tr>
+            <tr>
+                <td>Onbeperkte analyses</td>
+                <td><span class="cross">–</span></td>
+                <td><span class="check">✓</span></td>
+                <td class="col-featured"><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- CTA -->
+<div style="padding: 0 24px;">
+    <div class="cta-banner">
+        <h3>Niet zeker welk plan?</h3>
+        <p>Probeer Juriva gratis met de live demo — geen code, geen registratie. Of vraag een persoonlijke 14-daagse pilot aan.</p>
+        <a href="/">Bekijk live demo →</a>
+    </div>
+</div>
+
+<!-- FAQ -->
+<div class="faq-section">
+    <h2>Veelgestelde vragen</h2>
+
+    <div class="faq-item">
+        <div class="faq-q">Worden mijn contracten opgeslagen?</div>
+        <div class="faq-a">Nee. Documenten worden uitsluitend in tijdelijk geheugen verwerkt en direct na de analyse gewist. Juriva slaat geen contracten op en deelt ze niet met derden.</div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-q">Is Juriva een vervanging voor een advocaat?</div>
+        <div class="faq-a">Nee. Juriva is een tweede paar ogen — het signaleert risico's en afwijkingen van marktstandaard. Voor definitief juridisch advies raadt Juriva altijd aan een advocaat te raadplegen.</div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-q">Welke bestandsformaten worden ondersteund?</div>
+        <div class="faq-a">PDF en Word (.docx). Tekstbestanden (.txt) worden ook ondersteund.</div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-q">Hoe snel krijg ik toegang na aanvragen?</div>
+        <div class="faq-a">Binnen 1 werkdag ontvangt u een toegangscode per e-mail. Vragen? <a href="mailto:info.juriva@gmail.com">info.juriva@gmail.com</a></div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-q">Kan ik opzeggen wanneer ik wil?</div>
+        <div class="faq-a">Ja. Maandabonnementen zijn maandelijks opzegbaar. Jaarabonnementen lopen tot het einde van de termijn.</div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-q">Is er een Enterprise optie voor grote kantoren?</div>
+        <div class="faq-a">Ja. Voor kantoren met meer dan 5 gebruikers of white-label integraties, neem contact op via <a href="mailto:info.juriva@gmail.com">info.juriva@gmail.com</a></div>
+    </div>
+</div>
+
+<footer>
+    <span>© 2025 Juriva · juriva.nl</span>
+    <a href="mailto:info.juriva@gmail.com">info.juriva@gmail.com</a>
+</footer>
+
+<script>
+let isAnnual = false;
+
+function toggleBilling() {
+    isAnnual = !isAnnual;
+    const track = document.getElementById('billingToggle');
+    track.classList.toggle('annual', isAnnual);
+    document.getElementById('toggleMonthLabel').classList.toggle('active', !isAnnual);
+    document.getElementById('toggleAnnualLabel').classList.toggle('active', isAnnual);
+
+    // Update prices
+    document.querySelectorAll('.monthly-price[data-monthly]').forEach(el => {
+        el.textContent = isAnnual ? el.dataset.annual : el.dataset.monthly;
+    });
+
+    // Show/hide annual savings lines
+    ['zzp-annual','pro-annual','kantoor-annual'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = isAnnual ? 'block' : 'none';
+    });
+}
+</script>
+</body>
+</html>
