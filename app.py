@@ -7,6 +7,13 @@ import io
 import os
 import re
 import json
+import sqlite3
+import secrets
+import string
+import smtplib
+import stripe
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 from docx import Document as DocxDocument
 from docx.shared import Pt, RGBColor, Inches
@@ -14,133 +21,147 @@ from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-FLASK-SECRET"
+app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-ADMIN-SECRET"
 
-# ─────────────────────────────────────────
-# PASTE YOUR ANTHROPIC API KEY HERE
-# ─────────────────────────────────────────
-ANTHROPIC_API_KEY = "REDACTED-ANTHROPIC-KEY"
+# ─────────────────────────────────────────────────────────────
+# CONFIGURATION — set via Railway environment variables
+# ─────────────────────────────────────────────────────────────
+ANTHROPIC_API_KEY   = os.environ.get("ANTHROPIC_API_KEY", "REDACTED-ANTHROPIC-KEY")
+STRIPE_SECRET_KEY   = os.environ.get("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+GMAIL_FROM          = os.environ.get("GMAIL_FROM", "info.juriva@gmail.com")
+GMAIL_APP_PASSWORD  = os.environ.get("GMAIL_APP_PASSWORD", "")
+
+# Stripe Price IDs — fill in after creating products in Stripe dashboard
+STRIPE_PRICES = {
+    "per_analyse_monthly": os.environ.get("STRIPE_PRICE_PER_ANALYSE", ""),
+    "zzp_monthly":         os.environ.get("STRIPE_PRICE_ZZP_MONTHLY", ""),
+    "zzp_annual":          os.environ.get("STRIPE_PRICE_ZZP_ANNUAL", ""),
+    "pro_monthly":         os.environ.get("STRIPE_PRICE_PRO_MONTHLY", ""),
+    "pro_annual":          os.environ.get("STRIPE_PRICE_PRO_ANNUAL", ""),
+    "kantoor_monthly":     os.environ.get("STRIPE_PRICE_KANTOOR_MONTHLY", ""),
+    "kantoor_annual":      os.environ.get("STRIPE_PRICE_KANTOOR_ANNUAL", ""),
+}
+
+if STRIPE_SECRET_KEY:
+    stripe.api_key = STRIPE_SECRET_KEY
 
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
-# ─────────────────────────────────────────
-# ACCESS CODES — paste your valid_codes.txt block here
-# ─────────────────────────────────────────
-VALID_CODES = {
-    "JURIVA-PILOT-1",
-    "JURIVA-PILOT-2",
-    "JURIVA-PILOT-3",
-    "JURIVA-PILOT-4",
-    "JURIVA-PILOT-5",
-    "JURIVA-DENTONS-001",  # amsterdam@dentons.com
-    "JURIVA-HOUTHOFF-002",  # info@houthoff.com
-    "JURIVA-LOYENSLOEFF-003",  # tom.van.helmond@loyensloeff.com
-    "JURIVA-DLAPIPER-004",  # lex.oosterling@dlapiper.com
-    "JURIVA-ACTLEGALNETH-005",  # terry.steffens@actlegal-netherlands.com
-    "JURIVA-AMICEADVOCAT-006",  # j.vanvliet@amice-advocaten.nl
-    "JURIVA-SIXLEGAL-007",  # info@sixlegal.nl
-    "JURIVA-ROSS-008",  # info@ross.nl
-    "JURIVA-CLIFFORDCHAN-009",  # markjan.arends@cliffordchance.com
-    "JURIVA-OSBORNECLARK-010",  # jeroen.bedaux@osborneclarke.com
-    "JURIVA-DANIELSHUISM-011",  # bleker@danielshuisman.nl
-    "JURIVA-PELSRIJCKEN-012",  # abdessamad.elallaoui@pelsrijcken.nl
-    "JURIVA-RECOUP-013",  # info@recoup.nl
-    "JURIVA-BRINKHOF-014",  # info@brinkhof.com
-    "JURIVA-NAUTADUTILH-015",  # jaco.belder@nautadutilh.com
-    "JURIVA-FLORENT-016",  # kees.vandemeent@florent.nl
-    "JURIVA-LEEWAY-017",  # marga.verwoert@leeway.nl
-    "JURIVA-DELOITTE-018",  # fgrapperhaus@deloitte.nl
-    "JURIVA-LVHADVOCATEN-019",  # info@lvh-advocaten.nl
-    "JURIVA-LAWANDMORE-020",  # info@lawandmore.nl
-    "JURIVA-RUSSELL-021",  # reinier.russell@russell.nl
-    "JURIVA-VANDERMEIJAD-022",  # michielhoppenbrouwers@vandermeijadvocaten.nl
-    "JURIVA-PRINSENKOSTE-023",  # mr.prins@prinsenkosteradvocaten.nl
-    "JURIVA-MULTIWEB-024",  # vdheiden@multiweb.nl
-    "JURIVA-ADVOCATENKAN-025",  # neervoort@advocatenkantoorneervoort.nl
-    "JURIVA-KNUWERALKMAA-026",  # info@knuweralkmaar.nl
-    "JURIVA-KNUWERDENHEL-027",  # info@knuwerdenhelder.nl
-    "JURIVA-SPUISTRAAT10-028",  # info@spuistraat10.nl
-    "JURIVA-MEIJERSCANAT-029",  # info@meijerscanatan.nl
-    "JURIVA-DEBREIJ-030",  # info@debreij.nl
-    "JURIVA-LEXENCE-031",  # info@lexence.com
-    "JURIVA-STEK-032",  # info@stek.com
-    "JURIVA-VANDOORNE-033",  # info@vandoorne.com
-    "JURIVA-FLORENT-034",  # info@florent.nl
-    "JURIVA-JBLAW-035",  # info@jblaw.nl
-    "JURIVA-VRIMANMALAWY-036",  # info@vriman.nl
-    "JURIVA-VANCAMPENLIE-037",  # info@vancampenliem.com
-    "JURIVA-PLOUM-038",  # info@ploum.nl
-    "JURIVA-ACTLEGALNETH-039",  # info@act.nl
-    "JURIVA-AKD-040",  # info@akd.nl
-    "JURIVA-BANNING-041",  # info@banning.nl
-    "JURIVA-BARENTSKRANS-042",  # info@barentskrans.nl
-    "JURIVA-BIRDBIRD-043",  # info@bird.nl
-    "JURIVA-BOELSZANDERS-044",  # info@boels.nl
-    "JURIVA-BONDADVOCATE-045",  # info@bond.nl
-    "JURIVA-BRINKHOF-046",  # info@brinkhof.nl
-    "JURIVA-BRONSGEESTDE-047",  # info@bronsgeest.nl
-    "JURIVA-BUREAUBRANDE-048",  # info@bureau.nl
-    "JURIVA-BUREN-049",  # info@buren.nl
-    "JURIVA-CMS-050",  # info@cms.nl
-    "JURIVA-DAVIDSADVOCA-051",  # info@davids.nl
-    "JURIVA-DECLERCQADVO-052",  # info@de.nl
-    "JURIVA-DIRKZWAGERLE-053",  # info@dirkzwager.nl
-    "JURIVA-DUETADVOCATE-054",  # info@duet.nl
-    "JURIVA-DVANADVOCATE-055",  # info@dvan.nl
-    "JURIVA-DVDWADVOCATE-056",  # info@dvdw.nl
-    "JURIVA-EVERSSOERJAT-057",  # info@evers.nl
-    "JURIVA-FINCHDISPUTE-058",  # info@finch.nl
-    "JURIVA-FIZADVOCATEN-059",  # info@fiz.nl
-    "JURIVA-GREENBERGTRA-060",  # info@greenberg.nl
-    "JURIVA-HOLLA-061",  # info@holla.nl
-    "JURIVA-HEKKELMAN-062",  # info@hekkelman.nl
-    "JURIVA-HVGLAW-063",  # info@hvg.nl
-    "JURIVA-JAHAERAYMAKE-064",  # info@jahaeraymakers.nl
-    "JURIVA-JEBBINKSOETE-065",  # info@jebbink.nl
-    "JURIVA-KENNEDYVANDE-066",  # info@kennedy.nl
-    "JURIVA-KIENHUISHOVI-067",  # info@kienhuishoving.nl
-    "JURIVA-KIENHUISLEGA-068",  # info@kienhuis.nl
-    "JURIVA-KPMGLAWNETHE-069",  # info@kpmg.nl
-    "JURIVA-LAGRO-070",  # info@la.nl
-    "JURIVA-LXAATTORNEYS-071",  # info@lxa.nl
-    "JURIVA-MAVERICKADVO-072",  # info@maverick.nl
-    "JURIVA-NEWGROUNDLAW-073",  # info@newground.nl
-    "JURIVA-PELSRIJCKEN-074",  # info@pels.nl
-    "JURIVA-QUINZNETHERL-075",  # info@quinz.nl
-    "JURIVA-SCHAAPADVOCA-076",  # info@schaap.nl
-    "JURIVA-SEEGERSLEBKO-077",  # info@seegers.nl
-    "JURIVA-SIMMONSSIMMO-078",  # info@simmons.nl
-    "JURIVA-SQUIREPATTON-079",  # info@squire.nl
-    "JURIVA-STIBBENETHER-080",  # info@stibbe.nl
-    "JURIVA-TENHOLTERNOO-081",  # info@ten.nl
-    "JURIVA-TRIPADVOCATE-082",  # info@trip.nl
-    "JURIVA-VANBENTHEMKE-083",  # info@van.nl
-    "JURIVA-VESTIUSADVOC-084",  # info@vestius.nl
-    "JURIVA-VISSERSCHAAP-085",  # info@visser.nl
-    "JURIVA-WIJNSTAEL-086",  # info@wijn.nl
-    "JURIVA-WINDTLEGRAND-087",  # info@windt.nl
-    "JURIVA-WINTERTALING-088",  # info@wintertaling.nl
-    "JURIVA-WLADIMIROFFA-089",  # info@wladimiroff.nl
-    "JURIVA-YOURCORPORAT-090",  # info@your.nl
-    "JURIVA-ALLENOVERYNE-091",  # info@allen.nl
-    "JURIVA-BAKERMCKENZI-092",  # info@baker.nl
-    "JURIVA-CLIFFORDCHAN-093",  # info@clifford.nl
-    "JURIVA-DLAPIPERNETH-094",  # info@dla.nl
-    "JURIVA-DENTONSNETHE-095",  # info@dentons.nl
-    "JURIVA-JONESDAYAMST-096",  # info@jones.nl
-    "JURIVA-LINKLATERSAM-097",  # info@linklaters.nl
-    "JURIVA-LOYENSLOEFF-098",  # info@loyens.nl
-    "JURIVA-NAUTADUTILH-099",  # info@nautadutilh.nl
-    "JURIVA-HABRAKENRUTT-100",  # info@habrakenrutten.nl
-    "JURIVA-LAWTONLAWYER-101",  # info@lawton.nl
-    "JURIVA-TRIPELSADVOC-102",  # info@tripels.nl
-    "JURIVA-SEVERIJNHULS-103",  # info@severijn.nl
-    "JURIVA-LAWMOREEINDH-104",  # info@law.nl
-    "JURIVA-LEXENCELITIG-105",  # info@lexence.nl
-}
-
-code_activations = {}
 TRIAL_DAYS = 14
+
+# ─────────────────────────────────────────────────────────────
+# SQLITE — persistent storage for codes & activations
+# ─────────────────────────────────────────────────────────────
+DB_PATH = os.environ.get("DB_PATH", "/app/juriva.db")
+
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    with get_db() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS codes (
+                code TEXT PRIMARY KEY,
+                plan TEXT NOT NULL DEFAULT 'pilot',
+                email TEXT,
+                activated_at TEXT,
+                created_at TEXT NOT NULL,
+                stripe_session_id TEXT,
+                is_subscription INTEGER DEFAULT 0
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS payments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                stripe_session_id TEXT UNIQUE,
+                customer_email TEXT,
+                plan TEXT,
+                amount_total INTEGER,
+                currency TEXT,
+                created_at TEXT,
+                code_sent TEXT
+            )
+        """)
+        conn.commit()
+        # Seed pilot codes if not present
+        pilot_codes = [
+            ("JURIVA-PILOT-1", "pilot"), ("JURIVA-PILOT-2", "pilot"),
+            ("JURIVA-PILOT-3", "pilot"), ("JURIVA-PILOT-4", "pilot"),
+            ("JURIVA-PILOT-5", "pilot"), ("JURIVA-PILOT-6", "pilot"),
+            ("JURIVA-PILOT-7", "pilot"), ("JURIVA-PILOT-8", "pilot"),
+            ("JURIVA-PILOT-9", "pilot"), ("JURIVA-PILOT-10", "pilot"),
+        ]
+        for code, plan in pilot_codes:
+            conn.execute(
+                "INSERT OR IGNORE INTO codes (code, plan, created_at) VALUES (?, ?, ?)",
+                (code, plan, datetime.now().isoformat())
+            )
+        # Seed existing firm outreach codes
+        firm_codes = [
+            "JURIVA-DENTONS-001","JURIVA-CLIFFORDCHANCE-002","JURIVA-ALLENOVERY-003",
+            "JURIVA-FRESHFIELDS-004","JURIVA-HOUTHOFF-005","JURIVA-DEBRAUW-006",
+            "JURIVA-STIBBE-007","JURIVA-NautaDutilh-008","JURIVA-LOYENSLOEFF-009",
+            "JURIVA-AKDLAW-010","JURIVA-BOEKEL-011","JURIVA-PLOUMLAW-012",
+            "JURIVA-LEXENCECORP-013","JURIVA-LEXENCELITIG-014",
+        ]
+        for i, code in enumerate(firm_codes):
+            conn.execute(
+                "INSERT OR IGNORE INTO codes (code, plan, created_at) VALUES (?, ?, ?)",
+                (code, "pilot", datetime.now().isoformat())
+            )
+        conn.commit()
+
+init_db()
+
+# ─────────────────────────────────────────────────────────────
+# CODE HELPERS
+# ─────────────────────────────────────────────────────────────
+def generate_access_code(plan: str) -> str:
+    """Generate a unique random access code for a paid plan."""
+    plan_slug = plan.upper().replace(" ", "-")[:12]
+    chars = string.ascii_uppercase + string.digits
+    random_part = ''.join(secrets.choice(chars) for _ in range(8))
+    return f"JRV-{plan_slug}-{random_part}"
+
+def is_code_valid(code: str):
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM codes WHERE code = ?", (code,)).fetchone()
+    if not row:
+        return False, "invalid"
+    # Paid subscriptions — no expiry
+    if row["is_subscription"]:
+        return True, "ok"
+    # Trial / pilot codes
+    if row["activated_at"]:
+        activated_at = datetime.fromisoformat(row["activated_at"])
+        if datetime.now() > activated_at + timedelta(days=TRIAL_DAYS):
+            return False, "expired"
+    return True, "ok"
+
+def days_remaining(code: str) -> int:
+    with get_db() as conn:
+        row = conn.execute("SELECT * FROM codes WHERE code = ?", (code,)).fetchone()
+    if not row:
+        return 0
+    if row["is_subscription"]:
+        return 999  # unlimited
+    if not row["activated_at"]:
+        return TRIAL_DAYS
+    activated_at = datetime.fromisoformat(row["activated_at"])
+    return max(0, (activated_at + timedelta(days=TRIAL_DAYS) - datetime.now()).days)
+
+def activate_code(code: str):
+    with get_db() as conn:
+        row = conn.execute("SELECT activated_at FROM codes WHERE code = ?", (code,)).fetchone()
+        if row and not row["activated_at"]:
+            conn.execute(
+                "UPDATE codes SET activated_at = ? WHERE code = ?",
+                (datetime.now().isoformat(), code)
+            )
+            conn.commit()
 
 # ─────────────────────────────────────────
 # TEXT EXTRACTION
@@ -163,22 +184,70 @@ def extract_text_from_file(file):
     return text
 
 # ─────────────────────────────────────────
-# AUTH HELPERS
+# EMAIL SENDER
 # ─────────────────────────────────────────
-def is_code_valid(code):
-    if code not in VALID_CODES:
-        return False, "invalid"
-    if code in code_activations:
-        activated_at = datetime.fromisoformat(code_activations[code])
-        if datetime.now() > activated_at + timedelta(days=TRIAL_DAYS):
-            return False, "expired"
-    return True, "ok"
+def send_access_email(to_email: str, code: str, plan: str, lang: str = 'nl'):
+    """Send access code email via Gmail SMTP."""
+    if not GMAIL_APP_PASSWORD:
+        print(f"[EMAIL SKIP] No Gmail password configured. Code for {to_email}: {code}")
+        return False
+    try:
+        if lang == 'nl':
+            subject = f"Uw Juriva toegangscode — {plan}"
+            body = f"""Beste,
 
-def days_remaining(code):
-    if code not in code_activations:
-        return TRIAL_DAYS
-    activated_at = datetime.fromisoformat(code_activations[code])
-    return max(0, (activated_at + timedelta(days=TRIAL_DAYS) - datetime.now()).days)
+Bedankt voor uw aankoop van Juriva {plan}.
+
+Uw toegangscode is:
+
+    {code}
+
+Ga naar https://juriva.nl en voer deze code in om direct te beginnen.
+
+Heeft u vragen? Stuur een e-mail naar info.juriva@gmail.com — wij reageren binnen 1 werkdag.
+
+Met vriendelijke groet,
+Florean Drevel
+Juriva · juriva.nl
+
+---
+Juriva levert geen juridisch advies. Contracten dienen altijd door een bevoegde advocaat te worden beoordeeld.
+"""
+        else:
+            subject = f"Your Juriva access code — {plan}"
+            body = f"""Hello,
+
+Thank you for purchasing Juriva {plan}.
+
+Your access code is:
+
+    {code}
+
+Go to https://juriva.nl and enter this code to get started immediately.
+
+Questions? Email info.juriva@gmail.com — we respond within 1 business day.
+
+Kind regards,
+Florean Drevel
+Juriva · juriva.nl
+
+---
+Juriva does not provide legal advice. Contracts should always be reviewed by a qualified lawyer.
+"""
+        msg = MIMEMultipart()
+        msg['From'] = f"Juriva <{GMAIL_FROM}>"
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(GMAIL_FROM, GMAIL_APP_PASSWORD)
+            server.send_message(msg)
+        print(f"[EMAIL OK] Sent code {code} to {to_email}")
+        return True
+    except Exception as e:
+        print(f"[EMAIL ERROR] {e}")
+        return False
 
 # ─────────────────────────────────────────
 # ROUTES
@@ -210,8 +279,7 @@ def verify_code():
         return jsonify({'success': False, 'error': 'expired'})
     if not valid:
         return jsonify({'success': False, 'error': 'invalid'})
-    if code not in code_activations:
-        code_activations[code] = datetime.now().isoformat()
+    activate_code(code)
     session['authenticated'] = True
     session['code'] = code
     session['terms_accepted'] = session.get('terms_accepted', False)
@@ -782,6 +850,130 @@ def pricing():
     return render_template('pricing.html')
 
 
+# ─────────────────────────────────────────────────────────────
+# STRIPE — Checkout session creation
+# ─────────────────────────────────────────────────────────────
+
+PLAN_NAMES = {
+    "per_analyse_monthly": "Per Analyse",
+    "zzp_monthly":         "ZZP Plan (maandelijks)",
+    "zzp_annual":          "ZZP Plan (jaarlijks)",
+    "pro_monthly":         "Professioneel (maandelijks)",
+    "pro_annual":          "Professioneel (jaarlijks)",
+    "kantoor_monthly":     "Kantoor (maandelijks)",
+    "kantoor_annual":      "Kantoor (jaarlijks)",
+}
+
+@app.route('/create-checkout-session', methods=['POST'])
+def create_checkout_session():
+    if not STRIPE_SECRET_KEY:
+        return jsonify({'error': 'Payments not configured yet'}), 503
+    data = request.get_json() or {}
+    plan_key = data.get('plan', '')
+    lang = data.get('lang', 'nl')
+
+    price_id = STRIPE_PRICES.get(plan_key, '')
+    if not price_id:
+        return jsonify({'error': f'Unknown plan: {plan_key}'}), 400
+
+    is_subscription = 'monthly' in plan_key or 'annual' in plan_key
+    # Per analyse is a one-time payment
+    mode = 'payment' if plan_key == 'per_analyse_monthly' else 'subscription'
+
+    try:
+        base_url = request.host_url.rstrip('/')
+        session_obj = stripe.checkout.Session.create(
+            payment_method_types=['card', 'ideal'],
+            line_items=[{'price': price_id, 'quantity': 1}],
+            mode=mode,
+            success_url=f"{base_url}/success?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{base_url}/pricing",
+            metadata={'plan_key': plan_key, 'lang': lang},
+            locale='nl' if lang == 'nl' else 'en',
+            payment_method_collection='always',
+        )
+        return jsonify({'url': session_obj.url})
+    except stripe.error.StripeError as e:
+        return jsonify({'error': str(e)}), 400
+
+
+# ─────────────────────────────────────────────────────────────
+# STRIPE — Webhook (handles payment completion)
+# ─────────────────────────────────────────────────────────────
+
+@app.route('/webhook', methods=['POST'])
+def stripe_webhook():
+    payload = request.get_data()
+    sig_header = request.headers.get('Stripe-Signature', '')
+
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
+    except (ValueError, stripe.error.SignatureVerificationError) as e:
+        print(f"[WEBHOOK] Invalid signature: {e}")
+        return jsonify({'error': 'Invalid signature'}), 400
+
+    if event['type'] == 'checkout.session.completed':
+        session_obj = event['data']['object']
+        _handle_successful_payment(session_obj)
+
+    return jsonify({'status': 'ok'})
+
+
+def _handle_successful_payment(session_obj):
+    session_id    = session_obj.get('id', '')
+    customer_email = session_obj.get('customer_details', {}).get('email', '')
+    plan_key      = session_obj.get('metadata', {}).get('plan_key', 'unknown')
+    lang          = session_obj.get('metadata', {}).get('lang', 'nl')
+    amount_total  = session_obj.get('amount_total', 0)
+    currency      = session_obj.get('currency', 'eur')
+    plan_name     = PLAN_NAMES.get(plan_key, plan_key)
+    is_subscription = plan_key != 'per_analyse_monthly'
+
+    # Check if already processed (idempotency)
+    with get_db() as conn:
+        existing = conn.execute(
+            "SELECT id FROM payments WHERE stripe_session_id = ?", (session_id,)
+        ).fetchone()
+        if existing:
+            print(f"[WEBHOOK] Already processed session {session_id}")
+            return
+
+    # Generate unique code
+    code = generate_access_code(plan_key)
+    while True:
+        with get_db() as conn:
+            exists = conn.execute("SELECT 1 FROM codes WHERE code = ?", (code,)).fetchone()
+        if not exists:
+            break
+        code = generate_access_code(plan_key)
+
+    # Store code in DB
+    with get_db() as conn:
+        conn.execute(
+            """INSERT INTO codes (code, plan, email, created_at, stripe_session_id, is_subscription)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (code, plan_name, customer_email, datetime.now().isoformat(), session_id, int(is_subscription))
+        )
+        conn.execute(
+            """INSERT INTO payments (stripe_session_id, customer_email, plan, amount_total, currency, created_at, code_sent)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (session_id, customer_email, plan_name, amount_total, currency, datetime.now().isoformat(), code)
+        )
+        conn.commit()
+
+    # Send email
+    send_access_email(customer_email, code, plan_name, lang)
+    print(f"[PAYMENT OK] {customer_email} bought {plan_name} → code {code}")
+
+
+# ─────────────────────────────────────────────────────────────
+# SUCCESS PAGE
+# ─────────────────────────────────────────────────────────────
+
+@app.route('/success')
+def success():
+    return render_template('success.html')
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
