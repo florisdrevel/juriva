@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
+<meta name="cf-no-email-obfuscation" content="1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Juriva — Abonnementen</title>
@@ -166,6 +167,39 @@
         footer { flex-direction: column; gap: 10px; text-align: center; }
     }
 </style>
+<!-- JURIVA CRITICAL -->
+<script>
+// Critical functions defined early — before Cloudflare can corrupt the main script block
+function toggleTheme() {
+    var t = (localStorage.getItem('juriva-theme') || 'dark') === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('juriva-theme', t);
+    document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : '');
+    var btn = document.getElementById('themeBtn');
+    if (btn) btn.textContent = t === 'light' ? '🌕' : '🌙';
+}
+function setLang(lang) {
+    localStorage.setItem('juriva-lang', lang);
+    var nl = document.getElementById('btnNL');
+    var en = document.getElementById('btnEN');
+    if (nl) nl.classList.toggle('active', lang === 'nl');
+    if (en) en.classList.toggle('active', lang === 'en');
+    if (typeof renderAll === 'function') renderAll();
+}
+// Apply theme immediately to prevent flash
+(function() {
+    var t = localStorage.getItem('juriva-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : '');
+    document.addEventListener('DOMContentLoaded', function() {
+        var btn = document.getElementById('themeBtn');
+        if (btn) btn.textContent = t === 'light' ? '🌕' : '🌙';
+        var lang = localStorage.getItem('juriva-lang') || 'nl';
+        var nl = document.getElementById('btnNL');
+        var en = document.getElementById('btnEN');
+        if (nl) nl.classList.toggle('active', lang === 'nl');
+        if (en) en.classList.toggle('active', lang === 'en');
+    });
+})();
+</script>
 </head>
 <body>
 
@@ -225,10 +259,10 @@
 
 <footer>
     <span>© 2025 Juriva · juriva.nl</span>
-    <a href="/cdn-cgi/l/email-protection#2d44434b420347585f445b4c6d4a404c4441034e4240"><span class="__cf_email__" data-cfemail="6900070f0647031c1b001f08290e04080005470a0604">[email&#160;protected]</span></a>
+    <a id="footerEmail" href="#">info.juriva&#64;gmail.com</a>
 </footer>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 // ── THEME ──
 let currentTheme = localStorage.getItem('juriva-theme') || 'dark';
 function applyTheme(t) {
@@ -357,6 +391,10 @@ const T = {
 
 // ── RENDER ──
 let currentLang = localStorage.getItem('juriva-lang') || 'nl';
+
+// Plan keys — module scope so startCheckout can access them too
+const planKeys = ['per_analyse_monthly', 'zzp_monthly', 'pro_monthly', 'kantoor_monthly'];
+const planKeysAnnual = [null, 'zzp_annual', 'pro_annual', 'kantoor_annual'];
 
 function renderCards() {
     const t = T[currentLang];
