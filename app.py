@@ -263,6 +263,10 @@ def send_access_email(to_email: str, code: str, plan: str, lang: str = 'nl'):
             result = json.loads(resp.read().decode())
             print(f"[EMAIL OK] Sent to {to_email} — id: {result.get('id')}", flush=True)
             return True
+    except urllib.error.HTTPError as e:
+        body = e.read().decode('utf-8', errors='replace')
+        print(f"[EMAIL ERROR] HTTP {e.code}: {e.reason} — {body}", flush=True)
+        return False
     except Exception as e:
         print(f"[EMAIL ERROR] {e}", flush=True)
         import traceback; traceback.print_exc()
@@ -1079,4 +1083,3 @@ def admin_clear_session(secret, session_id):
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
