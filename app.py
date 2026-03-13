@@ -98,11 +98,11 @@ def init_db():
         conn.commit()
         # Seed pilot codes if not present
         pilot_codes = [
-            ("JURIVA-PILOT-1", "pilot"), ("JURIVA-PILOT-2", "pilot"),
-            ("JURIVA-PILOT-3", "pilot"), ("JURIVA-PILOT-4", "pilot"),
-            ("JURIVA-PILOT-5", "pilot"), ("JURIVA-PILOT-6", "pilot"),
-            ("JURIVA-PILOT-7", "pilot"), ("JURIVA-PILOT-8", "pilot"),
-            ("JURIVA-PILOT-9", "pilot"), ("JURIVA-PILOT-10", "pilot"),
+            ("JURIVA-PILOT-11", "pilot"), ("JURIVA-PILOT-21", "pilot"),
+            ("JURIVA-PILOT-31", "pilot"), ("JURIVA-PILOT-41", "pilot"),
+            ("JURIVA-PILOT-51", "pilot"), ("JURIVA-PILOT-61", "pilot"),
+            ("JURIVA-PILOT-71", "pilot"), ("JURIVA-PILOT-81", "pilot"),
+            ("JURIVA-PILOT-91", "pilot"), ("JURIVA-PILOT-101", "pilot"),
         ]
         for code, plan in pilot_codes:
             conn.execute(
@@ -1145,3 +1145,4 @@ def admin_clear_session(secret, session_id):
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
