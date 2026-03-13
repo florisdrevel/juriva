@@ -79,7 +79,8 @@ def init_db():
                 activated_at TEXT,
                 created_at TEXT NOT NULL,
                 stripe_session_id TEXT,
-                is_subscription INTEGER DEFAULT 0
+                is_subscription INTEGER DEFAULT 0,
+                analyse_count INTEGER DEFAULT 0
             )
         """)
         conn.execute("""
@@ -301,10 +302,28 @@ def verify_code():
     if not valid:
         return jsonify({'success': False, 'error': 'invalid'})
     activate_code(code)
+    # Get plan from DB and store in session
+    with get_db() as conn:
+        row = conn.execute("SELECT plan FROM codes WHERE code = ?", (code,)).fetchone()
+        plan = row['plan'] if row else 'pilot'
     session['authenticated'] = True
     session['code'] = code
+    session['plan'] = plan
     session['terms_accepted'] = session.get('terms_accepted', False)
-    return jsonify({'success': True, 'days_remaining': days_remaining(code)})
+    # Per Analyse: track usage count
+    if plan == 'Per Analyse':
+        with get_db() as conn:
+            row = conn.execute("SELECT analyse_count FROM codes WHERE code = ?", (code,)).fetchone()
+            used = row['analyse_count'] if row and 'analyse_count' in row.keys() else 0
+        session['analyses_remaining'] = max(0, 1 - used)
+    else:
+        session['analyses_remaining'] = 999
+    return jsonify({
+        'success': True,
+        'days_remaining': days_remaining(code),
+        'plan': plan,
+        'analyses_remaining': session.get('analyses_remaining', 999)
+    })
 
 @app.route('/api/check-auth', methods=['GET'])
 def check_auth():
@@ -343,6 +362,24 @@ def review_contract():
     if not valid:
         session.clear()
         return jsonify({'error': 'expired' if reason == 'expired' else 'Geen toegang.'}), 401
+
+    # Plan enforcement
+    plan = session.get('plan', 'pilot')
+    is_per_analyse = (plan == 'Per Analyse')
+    is_pro_or_above = plan in ('Professioneel', 'Kantoor')
+
+    # Per Analyse: check usage limit
+    if is_per_analyse:
+        with get_db() as conn:
+            row = conn.execute("SELECT analyse_count FROM codes WHERE code = ?", (code,)).fetchone()
+            used = 0
+            try:
+                used = row['analyse_count'] if row else 0
+            except Exception:
+                used = 0
+        if used >= 1:
+            return jsonify({'error': 'limit_reached', 'message': 'U heeft uw analyse gebruikt. Koop een nieuw Per Analyse of upgrade naar een abonnement.'}), 403
+
     try:
         if 'contract' not in request.files:
             return jsonify({'error': 'No file uploaded'}), 400
@@ -359,6 +396,8 @@ def review_contract():
         playbook_text = None
         playbook_context = ""
         if 'playbook' in request.files and request.files['playbook'].filename:
+            if not is_pro_or_above:
+                return jsonify({'error': 'upgrade_required', 'message': 'Playbook vergelijking is beschikbaar vanaf het Professioneel plan.'}), 403
             playbook_text = extract_text_from_file(request.files['playbook'])
             playbook_context = f"""
 PLAYBOOK INSTRUCTIONS:
@@ -375,6 +414,8 @@ PLAYBOOK CONTENT:
         second_doc_text = None
         cross_ref_context = ""
         if 'second_document' in request.files and request.files['second_document'].filename:
+            if not is_pro_or_above:
+                return jsonify({'error': 'upgrade_required', 'message': 'Multi-document analyse is beschikbaar vanaf het Professioneel plan.'}), 403
             second_doc_text = extract_text_from_file(request.files['second_document'])
             cross_ref_context = f"""
 CROSS-REFERENCE INSTRUCTIONS:
@@ -1014,7 +1055,24 @@ def _handle_successful_payment(session_obj):
 
 @app.route('/success')
 def success():
-    return render_template('success.html')
+    try:
+        return render_template('success.html')
+    except Exception:
+        # Fallback inline if template missing
+        return """<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Juriva — Betaling geslaagd</title>
+<style>body{font-family:Arial,sans-serif;background:#080808;color:#f0ede8;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
+.box{max-width:480px;text-align:center;padding:40px 32px;background:#0f0f0f;border:1px solid rgba(255,255,255,0.07);border-radius:12px}
+h1{font-size:28px;margin-bottom:12px}p{color:rgba(240,237,232,0.5);line-height:1.7}
+.code-note{background:#1a1815;border:1px solid #c8a951;border-radius:8px;padding:16px;margin:24px 0;color:#c8a951;font-size:14px}
+a{color:#c8a951;text-decoration:none}</style></head>
+<body><div class="box">
+<div style="border-top:2px solid #c8a951;width:32px;margin:0 auto 24px"></div>
+<h1>Betaling geslaagd</h1>
+<div class="code-note">Uw toegangscode is verstuurd naar uw e-mailadres.<br>Controleer ook uw spamfolder.</div>
+<p>Ga naar <a href="/">juriva.nl</a> en voer uw code in om direct te beginnen.</p>
+<p style="margin-top:24px;font-size:13px">Vragen? <a href="mailto:info@juriva.nl">info@juriva.nl</a></p>
+</div></body></html>"""
 
 
 @app.route('/admin/resend-email', methods=['POST'])
