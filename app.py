@@ -252,7 +252,7 @@ Juriva does not provide legal advice. Contracts should always be reviewed by a q
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'plain'))
 
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10) as server:
             server.login(GMAIL_FROM, GMAIL_APP_PASSWORD)
             server.send_message(msg)
         print(f"[EMAIL OK] Sent code {code} to {to_email}")
