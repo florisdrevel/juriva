@@ -301,9 +301,10 @@ def send_access_email(to_email: str, code: str, plan: str, lang: str = 'nl'):
 
 @app.after_request
 def disable_cf_email_obfuscation(response):
-    # Prevents Cloudflare from mangling mailto: links and injecting scripts
-    response.headers['X-Robots-Tag'] = 'noindex'
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    # Allow Google to index public pages, block caching on API responses
+    if request.path.startswith('/api') or request.path.startswith('/webhook') or request.path.startswith('/admin'):
+        response.headers['X-Robots-Tag'] = 'noindex'
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     return response
 
 @app.errorhandler(400)
