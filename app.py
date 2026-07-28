@@ -27,12 +27,12 @@ from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY") or "REDACTED-FLASK-SECRET"
+app.secret_key = os.environ["SECRET_KEY"]
 
 # ─────────────────────────────────────────────────────────────
 # CONFIGURATION — set via Railway environment variables
 # ─────────────────────────────────────────────────────────────
-ANTHROPIC_API_KEY   = os.environ.get("ANTHROPIC_API_KEY", "REDACTED-ANTHROPIC-KEY")
+ANTHROPIC_API_KEY   = os.environ.get("ANTHROPIC_API_KEY", "")
 STRIPE_SECRET_KEY   = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 GMAIL_FROM          = os.environ.get("GMAIL_FROM", "info.juriva@gmail.com")
@@ -1189,7 +1189,7 @@ def admin_resend_email():
 @app.route('/admin/resend/<secret>/<email>')
 def admin_resend_get(secret, email):
     """Browser-accessible resend endpoint."""
-    if secret != (os.environ.get('SECRET_KEY') or 'REDACTED-ADMIN-SECRET'):
+    if secret != os.environ['SECRET_KEY']:
         return "Unauthorized", 401
     with get_db() as conn:
         row = conn.execute(
@@ -1208,7 +1208,7 @@ def admin_resend_get(secret, email):
 @app.route('/admin/clear-session/<secret>/<session_id>')
 def admin_clear_session(secret, session_id):
     """Clear a processed session so webhook can reprocess it."""
-    if secret != (os.environ.get('SECRET_KEY') or 'REDACTED-ADMIN-SECRET'):
+    if secret != os.environ['SECRET_KEY']:
         return "Unauthorized", 401
     with get_db() as conn:
         conn.execute("DELETE FROM payments WHERE stripe_session_id = ?", (session_id,))
@@ -1220,7 +1220,7 @@ def admin_clear_session(secret, session_id):
 @app.route('/admin/insert-code/<secret>/<code>/<plan>/<int:days>')
 def admin_insert_code(secret, code, plan, days=31):
     """Insert a code directly into the DB. Optional days parameter overrides default expiry."""
-    if secret != (os.environ.get('SECRET_KEY') or 'REDACTED-ADMIN-SECRET'):
+    if secret != os.environ['SECRET_KEY']:
         return "Unauthorized", 401
     is_sub = 0 if plan == 'Per Analyse' else 1
     with get_db() as conn:
@@ -1239,7 +1239,7 @@ def admin_insert_code(secret, code, plan, days=31):
 @app.route('/admin/insert-test-code/<secret>/<code>/<plan>')
 def admin_insert_test_code(secret, code, plan):
     """Insert a test code with 2-minute expiry for testing."""
-    if secret != (os.environ.get('SECRET_KEY') or 'REDACTED-ADMIN-SECRET'):
+    if secret != os.environ['SECRET_KEY']:
         return "Unauthorized", 401
     is_sub = 0 if plan == 'Per Analyse' else 1
     sub_end = (datetime.now() + timedelta(minutes=2)).isoformat() if plan not in ('Per Analyse', 'Pilot') else None
@@ -1256,7 +1256,7 @@ def admin_insert_test_code(secret, code, plan):
 @app.route('/admin/clear-test-codes/<secret>')
 def admin_clear_test_codes(secret):
     """Delete all test codes (email = test@juriva.nl)."""
-    if secret != (os.environ.get('SECRET_KEY') or 'REDACTED-ADMIN-SECRET'):
+    if secret != os.environ['SECRET_KEY']:
         return "Unauthorized", 401
     with get_db() as conn:
         conn.execute("DELETE FROM codes WHERE email = 'test@juriva.nl'")
